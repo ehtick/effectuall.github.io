@@ -18,6 +18,7 @@
 	"Mechanics_Periodic_Motion": ["spring harmonic motion", "time period"],
 	"Mechanics_Spring_Force":["spring constant", "force constant", "SHM", "spring harmonic motion", "Hooke's Law", "kinematics"],
 	"Mechanics_Simple_Pendulum":["time period", "SHM", "spring harmonic motion", "kinematics"],
+	"Mechanics_Gravitational_Force":["time period", "Kepler's Law", "gravity", "law of Gravitation"],
 	"Mechanics_Gravitation_Law":["time period", "Kepler's Law", "gravity", "law of Gravitation"],
 	"Magnetism_History_of_Electromagnetism":["oersted's law", "effect on a magnetic needle", "steady electric current"],
 	"Magnetism_Fleming's_Thumb_Rule":["Fleming right hand rule", "steady electric current"],
