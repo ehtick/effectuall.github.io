@@ -22,6 +22,7 @@
 		"Mechanics_Periodic_Motion",
 		"Mechanics_Spring_Force",
 		"Mechanics_Simple_Pendulum",
+		"Mechanics_Gravitational_Force",
 		"Mechanics_Gravitation_Law"
 	],
 	"Electricity": [
