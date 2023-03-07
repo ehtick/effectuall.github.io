@@ -55,11 +55,11 @@ async function init() {
     if (window.location.hash !== '') {
 
         const file = window.location.hash.substring(13);
-        console.log(file, validRedirects.has(file), validRedirects, window.location.hash)
+        // console.log(file, validRedirects.has(file), validRedirects, window.location.hash)
         // use a predefined map of redirects to avoid untrusted URL redirection due to user-provided value
 
         if (validRedirects.has(file) === true) {
-            console.log(file)
+            // console.log(file)
             selectFile(file);
             viewer.src = validRedirects.get(file);
             viewer.style.display = 'unset';
@@ -69,7 +69,7 @@ async function init() {
     }
 
     if (viewer.src === '') {
-        // window.location.hash = 'intro.html';
+        window.location.hash = 'intro.html';
         viewer.src = 'intro.html';
         viewer.style.display = 'unset';
         viewSrcButton.style.display = 'none';
@@ -82,7 +82,8 @@ async function init() {
     if (filterInput.value !== '') {
 
         panel.classList.add('searchFocused');
-
+        
+        
         updateFilter(files, tags);
 
     } else {
@@ -94,7 +95,7 @@ async function init() {
     // Events
 
     filterInput.onfocus = function () {
-
+        content.classList.toggle('minimal');
         panel.classList.add('searchFocused');
 
     };
@@ -114,6 +115,7 @@ async function init() {
         filterInput.value = '';
         updateFilter(files, tags);
         panel.classList.remove('searchFocused');
+        content.classList.toggle('minimal');
 
     };
 
@@ -202,7 +204,7 @@ function selectFile(file) {
     // Reveal "View source" button and set attributes to this example
     viewSrcButton.style.display = 'block';
    
-    viewSrcButton.href = './Simulations/' + selected ;
+    viewSrcButton.href = './Simulations/' + selected +'.html';
 
 }
 
