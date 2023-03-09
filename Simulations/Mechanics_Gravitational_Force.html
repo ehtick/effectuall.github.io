@@ -49,7 +49,7 @@
 				</td>
 			</tr>
 			<tr>
-				<td>where G = 6.6743 x 10<sup>-11</sup> Nm<sup>2</sup>/C<sup>2</sup></td>
+				<td>where G = 6.6743 x 10<sup>-11</sup> Nm<sup>2</sup>/kg<sup>2</sup></td>
 			</tr>
 		</table>
 
@@ -86,13 +86,13 @@
 				<td id="fValue"></td>
 			</tr>
 		</table>
-
+		<button id="gravity" onClick="gravitySite()">Gravitational Law</button>
 
 	</div>
 	<script>
-		function theorySite() {
+		function gravitySite() {
 
-			window.open("../Theory/Magnetism/Magnetism_Hall_Effect.html", "_self")
+			window.open("Mechanics_Gravitation_Law.html", "_self")
 		}
 	</script>
 
@@ -164,7 +164,7 @@
 			m2Material: material['Moon'],
 			force: 0
 		}
-		const G = 6.6743e-11 //Gravitational constant x1e- in Nm^2/C^2
+		const G = 6.6743e-11 //Gravitational constant in m^3kg^-1s^-2  Nm^2/kg^2
 		for (const key in dists) {
 			// for (let i = 0; i < elmts.length; i++) {
 			let optn = key;
@@ -246,7 +246,7 @@
 			let force = gravitationLaw();
 			params.force = (force * 1e-20).toFixed(3);
 			console.log(params.force)
-			LABELS.add(addLabel(new THREE.Vector3(W / 2, 0, 0), '-45px', 'F = ' + params.force+ ' x 10<sup>20</sup> N', 'red'))
+			LABELS.add(addLabel(new THREE.Vector3(W / 2, 0, 0), '-45px', 'F = ' + params.force + ' x 10<sup>20</sup> N', 'red'))
 
 			fvalueEl.innerHTML = params.force + ' x 10<sup>20</sup> N'
 		}
@@ -288,8 +288,8 @@
 			LABELS.add(addLabel(m1Mass.position, '-25px', name1, 'white'))
 
 			LABELS.add(addLabel(m2Mass.position, '-25px', name2, 'white'))
-			LABELS.add(addLabel(new THREE.Vector3(W / 2, 0, 0), '25px','r =' + params.dist.slice(0, 4) + ' x 10<sup>8</sup> km', 'green'))
-			LABELS.add(addLabel(new THREE.Vector3(W / 2, 0, 0), '-45px', 'F =' + params.force.toFixed(2) + ' x 10<sup>'+ pow + '</sup> N', 'red'))
+			LABELS.add(addLabel(new THREE.Vector3(W / 2, 0, 0), '25px', 'r =' + params.dist.slice(0, 4) + ' x 10<sup>8</sup> km', 'green'))
+			LABELS.add(addLabel(new THREE.Vector3(W / 2, 0, 0), '-45px', 'F =' + params.force.toFixed(2) + ' x 10<sup>' + pow + '</sup> N', 'red'))
 
 			while (LINES.children.length > 0) {
 				const A = LINES.children[0];
@@ -452,13 +452,13 @@
 				let force = gravitationLaw();
 				let result = countDigits(force);
 				let t = result - 1;
-				console.log(force, result, force * 10 **(-t));
-				params.force = Number((force * 10 **(-t)).toFixed(3));
-				fvalueEl.innerHTML = params.force + ' x 10<sup>'+ t + '</sup> N'
-				
+				console.log(force, result, force * 10 ** (-t));
+				params.force = Number((force * 10 ** (-t)).toFixed(3));
+				fvalueEl.innerHTML = params.force + ' x 10<sup>' + t + '</sup> N'
+
 				if (params.m2 == "Moon") {
 
-					
+
 					earthMoon()
 				} else {
 					// let force = gravitationLaw();
