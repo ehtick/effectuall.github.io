@@ -1,38 +1,245 @@
 {
-	"Optics_Compound_Microscope":[ "ray diagram", "optical instrument" ],
-	"Optics_Astronomical_Telescope":[ "ray diagram", "optical instrument", "reflecting", "Galileo telescope", "refracting" ],
-	"Optics_Converging_Lens": [ "convex",  "ray diagram", "refracting", "lens formula", "magnification"],
-	"Optics_Diverging_Lens": [ "concave",  "ray diagram", "refracting", "ray diagram", "lens formula", "magnification" ],
-	"Optics_Converging_Mirror": [ "convex mirror",  "ray diagram", "refracting", "mirror formula", "magnification"],
-	"Optics_Diverging_Mirror": [ "concave mirror",  "ray diagram", "refracting", "mirror formula", "magnification" ],
-	"Optics_Reflection_of_Light": [ "Law of reflection",  "reflecting Surface", "mirror", "lateral shift" ],
-	"Optics_Refraction_of_Light": [ "Law of refraction",  "refracting Surface", "lens", "apparent shift" ],
-	"Optics_Understanding_waves": ["interference", "frequency", "amplitude", "wave number", "wave propagation"],
-	"Mechanics_Circular_Motion":["centripetal force","radial acceleration", "centripetal acceleration", "angular velocity", "frequency", "kinematics"],
-	"Mechanics_Projectile_Motion":["equation of motion", "projectile equations", "kinematics"],
-	"Mechanics_Motion_in_straight_line": ["vector", "distance", "position", "velocity", "acceleration", "kinematics"],
-	"Mechanics_Motion_in_a_Plane":["vector", "distance", "position", "velocity", "acceleration", "kinematics"],
-	"Mechanics_Vector_Display":["vector", "distance", "position"],
-	"Mechanics_Vector_Algebra":["vector", "distance", "position"],
-	"Mechanics_Banking_on_a_Road":["circular motion", "centripetal acceleration", "kinematics"],	
-	"Mechanics_Periodic_Motion": ["spring harmonic motion", "time period"],
-	"Mechanics_Spring_Force":["spring constant", "force constant", "SHM", "spring harmonic motion", "Hooke's Law", "kinematics"],
-	"Mechanics_Simple_Pendulum":["time period", "SHM", "spring harmonic motion", "kinematics"],
-	"Mechanics_Gravitational_Force":["time period", "Kepler's Law", "gravity", "law of Gravitation"],
-	"Mechanics_Gravitation_Law":["time period", "Kepler's Law", "gravity", "law of Gravitation"],
-	"Magnetism_History_of_Electromagnetism":["oersted's law", "effect on a magnetic needle", "steady electric current"],
-	"Magnetism_Fleming's_Thumb_Rule":["Fleming right hand rule", "steady electric current"],
-	"Magnetism_Magnetic_Effect_due_to_Current": [ "magnetic effect due to a coil", "solenoid", "toroid", "straight wire" ],
-	"Magnetism_Force_on_a_Current_Carrying_Conductor":["elctric motor", "lorenz force", "DC motor"],
-	"Magnetism_Electromagnetic_Induction":["Lenz Law", "Ampere's Law", "electric generator", "AC generator"],
-	"Magnetism_Hall_Effect":["Lorentz force", "Ampere's Law", "Hall sensor", "hall measurement"],
-	"Thermodynamics_Introduction":["scuba diver", "Bouyant Force", "Compressed Air", "Pressure under water"],
-	"Thermodynamics_Pressure":["pressure variation with depth", "pressure equation", "density", "why do objects sink", "why do objects float"],
-	"Thermodynamics_Bouyant_Force":["Buoyant Force", "Archimede's Principle", "measure mass of irregular object"],
-	"Thermodynamics_Pascal's_Law":["Hydraulic Press"],
-	"Thermodynamics_Torricellis_Law":["variation of fluid velocity with height", "Torricellis Law"],
-	"Thermodynamics_Ideal_Gas_Equation":["Ideal Gas Equation", " Boltzmann equation", "thermodynamic", "statistical mechanics", "equilibrium distribution", "Boyle's Law", "Charles Law"],
-	"Thermodynamics_Kinetic_Theory_of_Gases":["Ideal Gas Equation", "Kinetic Theory of Gases", " Boltzmann equation", "thermodynamic", "statistical mechanics", "equilibrium distribution"],
-	"Thermodynamics_Hot_Air_Balloon":["Ideal Gas Equation", "Kinetic Theory of Gases", " Boltzmann equation", "thermodynamic", "statistical mechanics"],
-	"Quantum_Photoelectric_Effect":["Quantum effect", "stopping voltage", "modern physics", "cutoff wavelength", "curoff frequency"]
+	"Optics_Compound_Microscope": [
+		"ray diagram",
+		"optical instrument"
+	],
+	"Optics_Astronomical_Telescope": [
+		"ray diagram",
+		"optical instrument",
+		"reflecting",
+		"Galileo telescope",
+		"refracting"
+	],
+	"Optics_Converging_Lens": [
+		"convex",
+		"ray diagram",
+		"refracting",
+		"lens formula",
+		"magnification"
+	],
+	"Optics_Diverging_Lens": [
+		"concave",
+		"ray diagram",
+		"refracting",
+		"ray diagram",
+		"lens formula",
+		"magnification"
+	],
+	"Optics_Converging_Mirror": [
+		"convex mirror",
+		"ray diagram",
+		"refracting",
+		"mirror formula",
+		"magnification"
+	],
+	"Optics_Diverging_Mirror": [
+		"concave mirror",
+		"ray diagram",
+		"refracting",
+		"mirror formula",
+		"magnification"
+	],
+	"Optics_Reflection_of_Light": [
+		"Law of reflection",
+		"reflecting Surface",
+		"mirror",
+		"lateral shift"
+	],
+	"Optics_Refraction_of_Light": [
+		"Law of refraction",
+		"refracting Surface",
+		"lens",
+		"apparent shift"
+	],
+	"Optics_Understanding_waves": [
+		"interference",
+		"frequency",
+		"amplitude",
+		"wave number",
+		"wave propagation"
+	],
+	"Mechanics_Circular_Motion": [
+		"centripetal force",
+		"radial acceleration",
+		"centripetal acceleration",
+		"angular velocity",
+		"frequency",
+		"kinematics"
+	],
+	"Mechanics_Projectile_Motion": [
+		"equation of motion",
+		"projectile equations",
+		"kinematics"
+	],
+	"Mechanics_Motion_in_straight_line": [
+		"vector",
+		"distance",
+		"position",
+		"velocity",
+		"acceleration",
+		"kinematics"
+	],
+	"Mechanics_Motion_in_a_Plane": [
+		"vector",
+		"distance",
+		"position",
+		"velocity",
+		"acceleration",
+		"kinematics"
+	],
+	"Mechanics_Vector_Display": [
+		"vector",
+		"distance",
+		"position"
+	],
+	"Mechanics_Vector_Algebra": [
+		"vector",
+		"distance",
+		"position"
+	],
+	"Mechanics_Banking_on_a_Road": [
+		"circular motion",
+		"centripetal acceleration",
+		"kinematics"
+	],
+	"Mechanics_Periodic_Motion": [
+		"spring harmonic motion",
+		"time period"
+	],
+	"Mechanics_Spring_Force": [
+		"spring constant",
+		"force constant",
+		"SHM",
+		"spring harmonic motion",
+		"Hooke's Law",
+		"kinematics"
+	],
+	"Mechanics_Simple_Pendulum": [
+		"time period",
+		"SHM",
+		"spring harmonic motion",
+		"kinematics"
+	],
+	"Mechanics_Gravitational_Force": [
+		"time period",
+		"Kepler's Law",
+		"gravity",
+		"law of Gravitation"
+	],
+	"Mechanics_Gravitation_Law": [
+		"time period",
+		"Kepler's Law",
+		"gravity",
+		"law of Gravitation"
+	],
+	"Magnetism_History_of_Electromagnetism": [
+		"oersted's law",
+		"effect on a magnetic needle",
+		"steady electric current"
+	],
+	"Magnetism_Fleming's_Thumb_Rule": [
+		"Fleming right hand rule",
+		"steady electric current"
+	],
+	"Magnetism_Magnetic_Effect_due_to_Current": [
+		"magnetic effect due to a coil",
+		"solenoid",
+		"toroid",
+		"straight wire"
+	],
+	"Magnetism_Force_on_a_Current_Carrying_Conductor": [
+		"elctric motor",
+		"lorenz force",
+		"DC motor"
+	],
+	"Magnetism_Electromagnetic_Induction": [
+		"Lenz Law",
+		"Ampere's Law",
+		"electric generator",
+		"AC generator"
+	],
+	"Magnetism_Hall_Effect": [
+		"Lorentz force",
+		"Ampere's Law",
+		"Hall sensor",
+		"hall measurement"
+	],
+	"Electricity_Coulomb's_Law": [
+		"Coulomb's Law",
+		"Electrostatic Force"
+	],
+	"Electricity_Three_Point_Charges_in_a_Line": [
+		"Coulomb's Law",
+		"Electrostatic Force",
+		"point charges"
+	],
+	"Electricity_Three_Point_Charges_at_Triangle_Corners": [
+		"Coulomb's Law",
+		"Electrostatic Force",
+		"point charges"
+	],
+	"Electricity_The_Electric_Field": [
+		"electric field",
+		"Electrostatic field"
+	],
+	"Electricity_Factors_Effecting_Capacitance": [
+		"capacitor",
+		"charging of a capacitor"
+	],
+	"Thermodynamics_Introduction": [
+		"scuba diver",
+		"Bouyant Force",
+		"Compressed Air",
+		"Pressure under water"
+	],
+	"Thermodynamics_Pressure": [
+		"pressure variation with depth",
+		"pressure equation",
+		"density",
+		"why do objects sink",
+		"why do objects float"
+	],
+	"Thermodynamics_Bouyant_Force": [
+		"Buoyant Force",
+		"Archimede's Principle",
+		"measure mass of irregular object"
+	],
+	"Thermodynamics_Pascal's_Law": [
+		"Hydraulic Press"
+	],
+	"Thermodynamics_Torricellis_Law": [
+		"variation of fluid velocity with height",
+		"Torricellis Law"
+	],
+	"Thermodynamics_Ideal_Gas_Equation": [
+		"Ideal Gas Equation",
+		" Boltzmann equation",
+		"thermodynamic",
+		"statistical mechanics",
+		"equilibrium distribution",
+		"Boyle's Law",
+		"Charles Law"
+	],
+	"Thermodynamics_Kinetic_Theory_of_Gases": [
+		"Ideal Gas Equation",
+		"Kinetic Theory of Gases",
+		" Boltzmann equation",
+		"thermodynamic",
+		"statistical mechanics",
+		"equilibrium distribution"
+	],
+	"Thermodynamics_Hot_Air_Balloon": [
+		"Ideal Gas Equation",
+		"Kinetic Theory of Gases",
+		" Boltzmann equation",
+		"thermodynamic",
+		"statistical mechanics"
+	],
+	"Quantum_Photoelectric_Effect": [
+		"Quantum effect",
+		"stopping voltage",
+		"modern physics",
+		"cutoff wavelength",
+		"curoff frequency"
+	]
 }
