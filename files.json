@@ -27,9 +27,9 @@
 	],
 	"Electricity": [
 		"Electricity_Coulomb's_Law",
-		"Electricity_Three_Point_Charges_in_a_Line",
-		"Electricity_Three_Point_Charges_at_Triangle_Corners",
 		"Electricity_The_Electric_Field",
+		"Electricity_Three_Point_Charges_in_a_Line",
+		"Electricity_Three_Point_Charges_at_Triangle_Corners",		
 		"Electricity_Understanding_Capacitance",
 		"Electricity_Factors_Effecting_Capacitance",
 		"Electricity_Understanding_Inductance"
