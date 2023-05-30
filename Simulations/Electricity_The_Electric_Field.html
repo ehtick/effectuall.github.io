@@ -86,13 +86,13 @@
 		import { CSS2DRenderer, CSS2DObject } from '../jsm/renderers/CSS2DRenderer.js';
 
 
-		let pointer, raycaster;
+		let pointer;
 		let camera, aspect, fov, stats, clock, gui;
 		let scene, renderer, labelRenderer, controls, transformControls, lineArrow;
 		let qCharge, q1Charge, q2Charge;
 		let posMaterial, negMaterial;
 		let sign = -1;
-
+		
 		let curves = new THREE.Group();
 		let CURVES = new THREE.Group();
 		let LABELS = new THREE.Group();
@@ -129,17 +129,13 @@
 			// document.body.appendChild(stats.dom);
 			clock = new THREE.Clock();
 
-
 			//renderer
 			createRenderer();
-
 			//cameracontrols
 			createControls(0, 1, 0);
-
 			//create light 
 			createLights();
 
-			raycaster = new THREE.Raycaster();
 			pointer = new THREE.Vector2();
 			for (const key in charges) {
 				// for (let i = 0; i < elmts.length; i++) {
@@ -153,12 +149,55 @@
 			// guiControls();
 			buttonLoad();
 
-			// fieldLines();
+			let plane = new THREE.Mesh(new THREE.BoxGeometry(10, .1, 10), new THREE.MeshBasicMaterial({
+				color: 0xff20ff,
+				side: THREE.DoubleSide,
+				transparent:true,
+				opacity:0.6
 
+			}));
+			plane.position.x = -10
+			plane.position.y = -10;
+			scene.add(plane);
+			transformControls = new TransformControls(camera, renderer.domElement);
+			transformControls.attach(plane);
+			scene.add(transformControls);
+
+			// transformControls.addEventListener('drag', render);
+			transformControls.addEventListener('change', function () {
+				render
+			});
+			transformControls.addEventListener('dragging-changed', function (event) {
+				controls.enabled = !event.value;		
+
+			});
+			window.addEventListener( 'keydown', function ( event ) {
+                console.log( event.keyCode )
+                switch ( event.keyCode ) {
+                        case 84: // W
+                            transformControls.setMode( 'translate' );
+							break;
+
+						case 82: // E
+                            transformControls.setMode( 'rotate' );
+							break;
+                }
+            })
 			document.body.appendChild(renderer.domElement);
+			document.addEventListener('wheel', onWheel);
+			document.addEventListener('click', onClick);
 			window.addEventListener('resize', onWindowResize);
 		}
 
+		function onWheel(event) {
+			
+			transformControls.showX =transformControls.showY = transformControls.showZ =false
+		}
+
+		function onClick(event) {
+			
+			transformControls.showX =transformControls.showY = transformControls.showZ = true;
+		}
 		function guiControls() {
 			gui = new GUI();
 			gui.close()
@@ -398,6 +437,8 @@
 
 			scene.add(CURVES);
 			scene.add(LABELS)
+
+			
 		}
 
 
