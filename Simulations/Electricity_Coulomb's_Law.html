@@ -163,9 +163,9 @@
 			scene.add(q2Charge);
 			objects.push(q1Charge, q2Charge)
 			
-			LABELS.add(addLabel(q1Charge.position, '-25px', params.q1Charge + ' &micro;C', 'white'))
-
-			LABELS.add(addLabel(q2Charge.position, '-25px', params.q2Charge + ' &micro;C', 'white'))
+			LABELS.add(addLabel(q1Charge.position, '-25px', 'q<sub>1</sub> = ' + params.q1Charge + ' &micro;C', 'white'))
+			
+			LABELS.add(addLabel(q2Charge.position, '-25px', 'q<sub>2</sub> = ' + params.q2Charge + ' &micro;C', 'white'))
 			scene.add(LABELS);
 			scene.add(LINES);
 
@@ -184,6 +184,8 @@
 			q2Charge.add(indicatorF2)
 			indicatorF1.rotation.z = (q1Charge.position.angleTo(q2Charge.position) / 2)
 			indicatorF2.rotation.z = (q2Charge.position.angleTo(q1Charge.position) / 2)
+			LABELS.add(addLabel(q1Charge.position, '-55px', 'F<sub>21<sub>', 'black'))
+			LABELS.add(addLabel(q2Charge.position, '-55px', 'F<sub>12<sub>', 'black'))
 			// guiControls();
 			buttonLoad();
 
@@ -402,9 +404,9 @@
 				A.parent.remove(A);
 			}
 
-			LABELS.add(addLabel(q1Charge.position, '-25px', params.q1Charge + ' &micro;C', 'white'))
+			LABELS.add(addLabel(q1Charge.position, '-25px', 'q<sub>1</sub> = ' + params.q1Charge + ' &micro;C', 'white'))
 
-			LABELS.add(addLabel(q2Charge.position, '-25px', params.q2Charge + ' &micro;C', 'white'))
+			LABELS.add(addLabel(q2Charge.position, '-25px', 'q<sub>2</sub> = ' + params.q2Charge + ' &micro;C', 'white'))
 
 			LINES.add(initLine({
 				points: [q1Charge.position, q2Charge.position],
@@ -414,7 +416,8 @@
 			LABELS.add(addLabel(new THREE.Vector3(0, 0, 0), '25px', 'r =' + params.dist + ' m', 'black'))
 			let force = coulombLaw().toFixed(2);
 			LABELS.add(addLabel(new THREE.Vector3(0, 0, 0), '-45px', 'F =' + force + ' N', 'red'))
-
+			LABELS.add(addLabel(q1Charge.position, '-55px', 'F<sub>21</sub>', 'black'))
+			LABELS.add(addLabel(q2Charge.position, '-55px', 'F<sub>12</sub>', 'black'))
 			inputRvalue.value = params.dist;
 
 			fvalueEl.innerHTML = force + ' N';
@@ -458,12 +461,12 @@
 
 			q1Charge.position.x = - params.dist / 2;
 
-			LABELS.add(addLabel(q1Charge.position, '-25px', params.q1Charge + ' &micro;C', 'white'))
+			LABELS.add(addLabel(q1Charge.position, '-25px', 'q<sub>1</sub> = ' + params.q1Charge + ' &micro;C', 'white'))
 
 
 			q2Charge.position.x = params.dist / 2;
 
-			LABELS.add(addLabel(q2Charge.position, '-25px', params.q2Charge + ' &micro;C', 'white'))
+			LABELS.add(addLabel(q2Charge.position, '-25px', 'q<sub>2</sub> = ' + params.q2Charge + ' &micro;C', 'white'))
 
 			LINES.add(initLine({
 				points: [q1Charge.position, q2Charge.position],
@@ -473,6 +476,8 @@
 			LABELS.add(addLabel(new THREE.Vector3(0, 0, 0), '25px', 'r = ' + params.dist + ' m', 'black'))
 			let force = coulombLaw().toFixed(2);
 			LABELS.add(addLabel(new THREE.Vector3(0, 0, 0), '-45px', 'F = ' + force + ' N', 'red'))
+			LABELS.add(addLabel(q1Charge.position, '-55px', 'F<sub>21</sub>', 'black'))
+			LABELS.add(addLabel(q2Charge.position, '-55px', 'F<sub>12</sub>', 'black'))
 			let a = 1
 			if (mag1 != mag2) {
 
