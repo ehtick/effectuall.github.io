@@ -859,10 +859,10 @@
 
         function calForce(q1, q2, d) {
 
-            let d1 = Number(d);
+            let d1 = Number(d).toFixed(0);
             let X = (constK * q1 * q2) / (d1 * d1);
-            let force = Number((X * 10).toFixed(3));
-            // console.log(X, force, q1, q2, d1)
+            let force = Number((X * 10).toFixed(2));
+            // console.log(q1, q2, d1, force )
 
             return force
         }
