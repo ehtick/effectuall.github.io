@@ -91,9 +91,7 @@
 		</div>
 		<a> <a id="message-1" style="color: red; text-transform: uppercase;">Two solutions, </a> <a id="message-2"
 				style="color: green; text-transform: uppercase">but only at one, forces are in opposite direction, </a>
-			as indicated.</a><br>
-
-		<br>
+			as indicated.</a>
 	</div>
 	<script>
 		function theorySite() {
@@ -105,7 +103,7 @@
 	<script type="module">
 		import * as THREE from '../build/three.module.js';
 		import { DragControls } from '../jsm/controls/DragControls.js';
-		// import { TransformControls } from '../jsm/controls/TransformControls.js';
+		import { TransformControls } from '../jsm/controls/TransformControls.js';
 		import { OrbitControls } from '../jsm/controls/OrbitControls.js';
 		import { GUI } from '../jsm/libs/lil-gui.module.min.js';
 		import { CSS2DRenderer, CSS2DObject } from '../jsm/renderers/CSS2DRenderer.js';
@@ -113,7 +111,7 @@
 
 		let pointer, raycaster;
 		let camera, aspect, fov, stats, clock, gui;
-		let scene, renderer, labelRenderer, controls, dragcontrols, transformControls, lineArrow;
+		let scene, renderer, labelRenderer, controls, transformControls, lineArrow;
 		let q1Charge, q2Charge, q3Charge, indicatorF12, indicatorF21, indicatorF13, indicatorF31, indicatorF32, indicatorF23;
 		let sign = '(-)';
 		let posCol, negCol;
@@ -121,7 +119,7 @@
 		let disp = 0.0, t = 0.001;
 		let curveHandles = [];
 		const objects = [];
-		// let SELECTED, drag_objects = [], draggableObject;;
+		let SELECTED, drag_objects = [], draggableObject;;
 		let curves = new THREE.Group();
 		let CURVES = new THREE.Group();
 		let LABELS = new THREE.Group();
@@ -155,8 +153,99 @@
 		init()
 		animate()
 
+		//Three point charge scene
+		function init() {
+			scene = new THREE.Scene();
+			scene.background = new THREE.Color(0xbfd1e5);
+
+			createCamera(4, 20, 80);
+			createRenderer();
+			createControls(15, 0, -25);
+			createLights();
+
+			raycaster = new THREE.Raycaster();
+			pointer = new THREE.Vector2();
+
+			//group collection
+			scene.add(LABELS);
+			scene.add(LINES);
+
+			posCol = "rgb(90%, 10%, 0%)"
+			negCol = "rgb(10%, 0%, 90%)"
+
+			posMaterial = new THREE.MeshPhongMaterial({ color: posCol });
+			negMaterial = new THREE.MeshPhongMaterial({ color: negCol });
+
+			const gridHelper = new THREE.GridHelper(200, 20);
+			scene.add(gridHelper);
+
+			//creating the three charges.. materials/color defined above
+			let q1Geometry = new THREE.SphereGeometry(1.5, 16).translate(0, 1.5, 0);
+			q1Charge = new THREE.Mesh(q1Geometry, negMaterial);
+
+			q2Charge = q1Charge.clone();
+			q3Charge = q1Charge.clone();
+
+			q1Charge.position.x = params.r1Value * 10; //distance calculated follow Coulomb's law
+			scene.add(q1Charge);
+
+			q2Charge.position.x = params.r2Value * 10;
+			scene.add(q2Charge);
+
+			scene.add(q3Charge);
+			objects.push(q1Charge, q2Charge) //for raycaster select from the charge q1 and q2 only
+
+			//add labels to identify the charges
+			q1Charge.add(addLabel(new THREE.Vector3(0, -3, 0), '0px', '0px', '(q<sub>1</sub>)', 'black'))
+			q2Charge.add(addLabel(new THREE.Vector3(0, -3, 0), '0px', '0px', '(q<sub>2</sub>)', 'black'))
+			q3Charge.add(addLabel(new THREE.Vector3(0, -3, 0), '0px', '0px', '(q<sub>3</sub>)', 'black'))
+
+			//add force arrows for vector representation
+			indicatorF21 = addArrow(0.6, 2, 'darkblue')
+			indicatorF31 = addArrow(0.6, 1.3, 'darkred')
+
+			//add labels for the two forces acting on each chrges
+			let F21label = addLabel(new THREE.Vector3(5, 1, 0), '0px', '0px', 'F<sub>21<sub>', 'blue')
+			let F31label = addLabel(new THREE.Vector3(5, -1, 0), '0px', '0px', 'F<sub>31<sub>', 'red')
+
+			indicatorF21.add(F21label)
+			indicatorF31.add(F31label)
+			q1Charge.add(indicatorF21, indicatorF31) //force vectors on charge q1
+
+			indicatorF12 = addArrow(0.6, 2, 'darkblue')
+			indicatorF32 = addArrow(0.6, 0.7, 'darkgreen')
+
+			let F12label = addLabel(new THREE.Vector3(5, 1, 0), '0px', '0px', 'F<sub>12<sub>', 'blue')
+			let F32label = addLabel(new THREE.Vector3(5, -1, 0), '0px', '0px', 'F<sub>32<sub>', 'green')
+
+			indicatorF12.add(F12label)
+			indicatorF32.add(F32label)
+			q2Charge.add(indicatorF12, indicatorF32) //force vectors on charge q2
+
+			indicatorF13 = addArrow(0.6, 1.4, 'darkred')
+			indicatorF23 = addArrow(0.6, 0.7, 'darkgreen')
+
+
+			let F1label = addLabel(new THREE.Vector3(5, 1, 0), '0px', '0px', 'F<sub>13<sub>', 'red')
+			let F2label = addLabel(new THREE.Vector3(5, -1, 0), '0px', '0px', 'F<sub>23<sub>', 'green')
+
+			indicatorF23.add(F2label)
+			indicatorF13.add(F1label)
+
+			q3Charge.add(indicatorF13, indicatorF23) //force vectors on charge q3
+
+			inputAction();
+			buttonLoad();
+			transControls();
+
+			document.body.appendChild(renderer.domElement);
+			document.addEventListener('click', onClick);
+			window.addEventListener('resize', onWindowResize);
+		}
+
 
 		function calPosition() {
+			//two possible solutions
 			let q1 = Math.abs(params.q1Charge);
 			let q2 = Math.abs(params.q2Charge);
 			let r1 = params.r1Value;
@@ -179,139 +268,34 @@
 				return { X1, X2 }
 
 			}
-			// else if (params.q1Charge / q1 == params.q2Charge / q2) {
-			// 	let A = Math.abs((r1 - r2) / 2);
-
-			// 	// console.log(A)
-			// 	X1 = Number(A);
-			// 	X2 = 'only one solution';
-			// 	return { X1, X2 }
-			// } else if (params.q1Charge / q1 != params.q2Charge / q2) {
-
-			// 	return 'no solution'
-			// }
 		}
 
-		function init() {
-			scene = new THREE.Scene();
-			scene.background = new THREE.Color(0xbfd1e5);
+		function buttonLoad() {
 
-			createCamera(4, 20, 80);
+			inputQ1value.addEventListener('input', function (e) {
 
-			createRenderer();
-
-			createControls(15, 0, -25);
-
-			createLights();
-
-			raycaster = new THREE.Raycaster();
-			pointer = new THREE.Vector2();
-			posCol = "rgb(90%, 10%, 0%)"
-			negCol = "rgb(10%, 0%, 90%)"
-			posMaterial = new THREE.MeshPhongMaterial({ color: posCol });
-			negMaterial = new THREE.MeshPhongMaterial({ color: negCol });
-			const gridHelper = new THREE.GridHelper(200, 20);
-			scene.add(gridHelper);
-
-			let q1Geometry = new THREE.SphereGeometry(1.5, 16).translate(0, 1.5, 0);
-			q1Charge = new THREE.Mesh(q1Geometry, negMaterial);
-
-			q2Charge = q1Charge.clone();
-			q3Charge = q1Charge.clone();
-
-			q1Charge.position.x = params.r1Value * 10;
-			scene.add(q1Charge);
-
-			q2Charge.position.x = params.r2Value * 10;
-			scene.add(q2Charge);
-
-			scene.add(LABELS);
-			scene.add(LINES);
-			scene.add(q3Charge);
-			objects.push(q1Charge, q2Charge, q3Charge)
-
-
-			q1Charge.add(addLabel(new THREE.Vector3(0, -3, 0), '0px', '0px', '(q<sub>1</sub>)', 'black'))
-			q2Charge.add(addLabel(new THREE.Vector3(0, -3, 0), '0px', '0px', '(q<sub>2</sub>)', 'black'))
-			q3Charge.add(addLabel(new THREE.Vector3(0, -3, 0), '0px', '0px', '(q<sub>3</sub>)', 'black'))
-
-			indicatorF21 = addArrow(0.6, 2, 'darkblue')
-			indicatorF31 = addArrow(0.6, 1.3, 'darkred')
-
-			let F21label = addLabel(new THREE.Vector3(5, 1, 0), '0px', '0px', 'F<sub>21<sub>', 'blue')
-			let F31label = addLabel(new THREE.Vector3(5, -1, 0), '0px', '0px', 'F<sub>31<sub>', 'red')
-
-			indicatorF21.add(F21label)
-			indicatorF31.add(F31label)
-			q1Charge.add(indicatorF21, indicatorF31)
-
-			indicatorF12 = addArrow(0.6, 2, 'darkblue')
-			indicatorF32 = addArrow(0.6, 0.7, 'darkgreen')
-
-			let F12label = addLabel(new THREE.Vector3(5, 1, 0), '0px', '0px', 'F<sub>12<sub>', 'blue')
-			let F32label = addLabel(new THREE.Vector3(5, -1, 0), '0px', '0px', 'F<sub>32<sub>', 'green')
-
-			// LABELS.add(F12label, F32label)
-			indicatorF12.add(F12label)
-			indicatorF32.add(F32label)
-			q2Charge.add(indicatorF12, indicatorF32)
-
-			indicatorF13 = addArrow(0.6, 1.4, 'darkred')
-			indicatorF23 = addArrow(0.6, 0.7, 'darkgreen')
-
-
-			let F1label = addLabel(new THREE.Vector3(5, 1, 0), '0px', '0px', 'F<sub>13<sub>', 'red')
-			let F2label = addLabel(new THREE.Vector3(5, -1, 0), '0px', '0px', 'F<sub>23<sub>', 'green')
-
-			// LABELS.add(F1label, F2label)
-			indicatorF23.add(F2label)
-			indicatorF13.add(F1label)
-
-			q3Charge.add(indicatorF13, indicatorF23)
-			// changePosition()
-			inputAction()
-			// guiControls();
-			buttonLoad();
-			dragcontrols = new DragControls(objects, camera, renderer.domElement);
-			dragcontrols, addEventListener('dragstart', function (event) {
-				controls.enabled = false;
+				params.q1Charge = inputQ1value.value;
+				inputAction()
 
 			})
-			dragcontrols.addEventListener('drag', function (event) {
+			inputQ2value.addEventListener('input', function (e) {
 
+				params.q2Charge = inputQ2value.value;
+				inputAction()
+			})
+			selectQ3value.addEventListener('input', function (e) {
 
-				if (event.object.parent === scene) {
-					event.object.position.z = 0;
-					event.object.position.y = 0;
-					dragChange()
-
-
-
-				} else if (event.object.parent != scene) {
-					console.log(event, event.object)
-					event.object.position.x = 0;
-					event.object.position.z = 0;
-					event.object.position.y = 0;
+				if (this.value == 'Positive') {
+					sign = '(+)'
+					params.q3Charge = 1
+				} else if (this.value == 'Negative') {
+					sign = '(-)'
+					params.q3Charge = -1
 				}
 
+				inputAction()
 			});
-			dragcontrols.addEventListener('dragend', function (event) {
-				controls.enabled = true;
-				dragChange()
-				// if (event.object != q3Charge) {
-				// 	dragChange()
-				// } else {
-				// 	q3Change()
-				// 	console.log(event.object)
-				// }
 
-				// changeDist()
-				// chargeCol()
-				// changeLines()
-				// changePosition()
-			});
-			document.body.appendChild(renderer.domElement);
-			window.addEventListener('resize', onWindowResize);
 		}
 
 		function q3Change() {
@@ -348,41 +332,10 @@
 
 				SELECTED = intersects[0].object;
 				if (SELECTED.parent.type == 'Scene') {
-					console.log(SELECTED)
-					drag_objects.push(SELECTED)
-
-
+					// console.log(SELECTED)
+					transformControls.attach(SELECTED);
 				}
-
-
-
 			}
-
-		}
-
-		function dragControls() {
-
-			dragcontrols = new DragControls(objects, camera, renderer.domElement);
-			dragcontrols, addEventListener('dragstart', function (event) {
-				controls.enabled = false;
-			})
-			dragcontrols.addEventListener('drag', function (event) {
-
-				event.object.position.z = 0;
-				event.object.position.y = 0;
-				transformCal()
-
-			});
-
-			dragcontrols.addEventListener('dragend', function (event) {
-				controls.enabled = true;
-				dragChange()
-				// chargeCol()
-				// changeDist()
-				// changePosition()
-				// changeLines()
-
-			});
 		}
 
 		function transControls() {
@@ -395,10 +348,17 @@
 			transformControls.addEventListener('change', function () {
 				render
 			});
+
 			transformControls.addEventListener('dragging-changed', function (event) {
 				controls.enabled = !event.value;
+				// inputAction()
+				dragChange()
+				// transformCal()
+			});
 
-				transformCal()
+			transformControls.addEventListener('dragend', function (event) {
+				controls.enabled = true;
+
 			});
 		}
 
@@ -512,6 +472,7 @@
 			let mag2 = (params.q2Charge) / Math.abs(params.q2Charge);
 
 			if (Math.abs(params.q1Charge) == Math.abs(params.q2Charge)) {
+				//solution when q1, q2 are equal in magnitude--no solution
 				r3valueEl.innerHTML = 'No solution';
 				message1El.innerHTML = 'No solution,';
 				message2El.innerHTML = '';
@@ -540,34 +501,44 @@
 					q2Charge.material = negMaterial
 					LABELS.add(addLabel(q2Charge.position, '0px', '0px', params.q2Charge + ' &micro;C', 'black'))
 				}
-
+				// changeDist()
+				// changeLines()
 			} else {
-				console.log('2 sol')
-				changePosition()
+				//solution when q1, q2 are not equal in magnitude == 2 solutions
+				twoSolution()
 			}
 
 		}
 
 		function inputAction() {
 			if (params.q1Charge != params.q2Charge) {
-
+				console.log(params)
 				solDisplay()
 
 			} else if (params.q1Charge == params.q2Charge) {
-
-				let A = (q1Charge.position).distanceTo(q2Charge.position)
-
-				// console.log(A)
-				r3valueEl.innerHTML = A / 20 + ' m,';
+				console.log('one solution')
 				message1El.innerHTML = 'only one solution,';
 				message2El.innerHTML = 'at mid-center,';
 				message1El.style.color = 'red';
 				message2El.style.color = 'green';
-				q3Charge.position.x = A / 2;
 				chargeCol()
+				singleSolution()
 				changeDist()
 				changeLines()
 			}
+		}
+
+		function singleSolution() {
+			//two possible solutions
+			let q1 = Math.abs(params.q1Charge);
+			let q2 = Math.abs(params.q2Charge);
+			let r1 = Number(params.r1Value);
+			let r2 = Number(params.r2Value);
+			let X1, X2;
+
+			let r3 = Number((r2 + r1) / 2);
+			q3Charge.position.x = r3 * 10;
+			console.log(params)
 		}
 
 		function chargeCol() {
@@ -640,98 +611,12 @@
 				points: [C, D],
 				lineMaterial: new THREE.LineBasicMaterial({ color: "rgb(0%, 0%, 100%)" })
 			}));
-
-			// LINES.add(initLine({
-			// 	points: [new THREE.Vector3(0, -9, 0), new THREE.Vector3(q3Charge.position.x, -9, 0)],
-			// 	lineMaterial: new THREE.LineBasicMaterial({ color: "rgb(0%, 100%, 0%)" })
-			// }));
-
-		}
-
-		function buttonLoad() {
-
-			inputQ1value.addEventListener('input', function (e) {
-
-				params.q1Charge = inputQ1value.value;
-				inputAction()
-
-			})
-			inputQ2value.addEventListener('input', function (e) {
-
-				params.q2Charge = inputQ2value.value;				
-				inputAction()
-			})
-			selectQ3value.addEventListener('input', function (e) {
-
-				if (this.value == 'Positive') {
-					sign = '(+)'
-					params.q3Charge = 1
-				} else if (this.value == 'Negative') {
-					sign = '(-)'
-					params.q3Charge = -1
-				}
-
-				inputAction()
-			});
-
-		}
-
-		function indicatorChange() {
-			let mag1 = (params.q1Charge) / Math.abs(params.q1Charge);
-			let mag2 = (params.q2Charge) / Math.abs(params.q2Charge);
-			let mag3 = (params.q3Charge) / Math.abs(params.q3Charge);
-
-			if (mag1 == mag2) {
-				// console.log(indicatorF23, indicatorF32)
-				indicatorF12.scale.set(-1, 1, 1)
-				indicatorF21.scale.set(1, 1, 1)
-			} else if (mag1 != mag2) {
-				// console.log(indicatorF23, indicatorF32)
-				indicatorF12.scale.set(1, 1, 1)
-				indicatorF21.scale.set(-1, 1, 1)
-			}
-
-
-
-
-		}
-
-		function coulombLaw(q1, q2, r) {
-			let force = (K * q1 * q2) / (r * r)
-			let f = Number((force * 10).toFixed(1))
-			return f
-		}
-
-		// function onClick(event) {
-		// 	// console.log(event); 
-		// 	event.preventDefault();
-
-		// 	pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-		// 	pointer.y = - (event.clientY / window.innerHeight) * 2 + 1;
-
-		// 	raycaster.setFromCamera(pointer, camera);
-		// 	let intersects = raycaster.intersectObjects(objects, true);
-		// 	if (intersects.length > 0) {
-
-		// 		SELECTED = intersects[0].object;
-		// 		if (SELECTED.parent.type == 'Scene') {
-
-		// 			transformControls.attach(SELECTED);
-		// 		}
-
-
-		// 	}
-		// }
-
-		function transformCal() {
-
-			indicatorChange()
 		}
 
 		function dragChange() {
+
 			params.r1Value = (q1Charge.position.x / 10).toFixed(2);
 			params.r2Value = (q2Charge.position.x / 10).toFixed(2);
-			params.r3Value = (q3Charge.position.x / 10).toFixed(2);
 
 			let A = calPosition().X1;
 			let B = calPosition().X2;
@@ -749,83 +634,10 @@
 			dist2El.innerText = params.r2Value + ' - ';
 			r3valueEl.innerHTML = A + ' or ' + B + ' m';
 
-			let r1 = (Math.abs(q1Charge.position.x - q3Charge.position.x) / 10).toFixed(2);
-			let r2 = (Math.abs(q2Charge.position.x - q3Charge.position.x) / 10).toFixed(2);
-			let r3 = ((q3Charge.position.x) / 10).toFixed(2);
+
 			chargeCol()
-			LABELS.add(addLabel(new THREE.Vector3((q3Charge.position.x + q2Charge.position.x) / 2, -5, 0), '0px', '0px', r2 + ' m', 'black'))
-			LABELS.add(addLabel(new THREE.Vector3((q1Charge.position.x + q3Charge.position.x) / 2, -5, 0), '0px', '0px', r1 + ' m', 'black'))
-			// console.log(params)
-			// LABELS.add(addLabel(new THREE.Vector3((q3Charge.position.x) / 2, -9, 0), '0px', '0px', r3 + ' m', 'black'))
 			changeLines()
-		}
-
-		function recreateScene() {
-
-
-			let mag1 = (params.q1Charge) / Math.abs(params.q1Charge);
-			let mag2 = (params.q2Charge) / Math.abs(params.q2Charge);
-			// console.log(q1Charge, q2Charge)
-
-
-			while (LINES.children.length > 0) {
-				const A = LINES.children[0];
-				A.parent.remove(A);
-			}
-			while (LABELS.children.length > 0) {
-				const A = LABELS.children[0];
-				A.parent.remove(A);
-			}
-
-
-			indicatorF1.position.y = 2;
-			indicatorF2.position.y = 0;
-
-
-
-			if (mag1 < 0) {
-				q1Charge.material = negMaterial
-			} else {
-				q1Charge.material = posMaterial
-			}
-
-			if (mag2 < 0) {
-				q2Charge.material = negMaterial
-			} else {
-				q2Charge.material = posMaterial
-			}
-
-			q1Charge.position.x = - params.dist / 2;
-
-			LABELS.add(addLabel(q1Charge.position, '-25px', params.q1Charge + ' &micro;C', 'white'))
-
-
-			q2Charge.position.x = params.dist / 2;
-
-			LABELS.add(addLabel(q2Charge.position, '-25px', params.q2Charge + ' &micro;C', 'white'))
-
-			LINES.add(initLine({
-				points: [q1Charge.position, q2Charge.position],
-				lineMaterial: new THREE.LineBasicMaterial({ color: "rgb(0%, 0%, 0%)" })
-			}));
-
-			LABELS.add(addLabel(new THREE.Vector3(0, 0, 0), '25px', 'r = ' + params.dist + ' m', 'black'))
-			let force = coulombLaw().toFixed(2);
-			LABELS.add(addLabel(new THREE.Vector3(0, 0, 0), '-45px', 'F = ' + force + ' N', 'red'))
-			let a = 1
-			if (mag1 != mag2) {
-
-				indicatorF1.scale.set(-a, -a, -a)
-				indicatorF2.scale.set(a, a, a)
-
-			} else if (mag1 == mag2) {
-
-				indicatorF1.scale.set(a, a, a)
-				indicatorF2.scale.set(-a, -a, -a)
-
-			}
-
-
+			changeDist()
 		}
 
 		function addArrow(s, pos, col) {
@@ -847,18 +659,6 @@
 			return line
 		}
 
-		function arrowHelper(dir, scale, col, pos) {
-			dir.normalize();
-
-			const origin = new THREE.Vector3(0, 0, 0);
-			const length = scale;
-			const hex = col;
-
-			const arrowHelper = new THREE.ArrowHelper(dir, origin, length, hex);
-			arrowHelper.position.y = pos
-			return arrowHelper
-		}
-
 		function addLabel(vector, valueT, valueL, name, col) {
 			let text = document.createElement('div');
 			text.className = 'label';
@@ -873,23 +673,13 @@
 			return label
 		}
 
-		function initLine(data) {
-			let lineGeometry = new THREE.BufferGeometry().setFromPoints(data.points);
-			let line = new THREE.Line(lineGeometry, data.lineMaterial);
-			return line;
-		}
+		function twoSolution() {
 
-		function radTodeg(T) {
-			return (T * (180 / Math.PI)).toFixed(1)
-		}
-
-		function changePosition() {
-
-			let A = calPosition().X1;
+			let A = calPosition().X1; //two possible solutions are A, B
 			let B = calPosition().X2;
 			// let C =  (q1Charge.position).distanceTo(q2Charge.position)
 			console.log(q3Charge.position)
-			let mag1 = (params.q1Charge) / Math.abs(params.q1Charge);
+			let mag1 = (params.q1Charge) / Math.abs(params.q1Charge); //get the sign
 			let mag2 = (params.q2Charge) / Math.abs(params.q2Charge);
 			let mag3 = (params.q3Charge) / Math.abs(params.q3Charge);
 			dist1El.innerText = params.r2Value + ' - ';
@@ -965,6 +755,18 @@
 			}
 			LABELS.add(addLabel(q3Charge.position, '0px', '0px', sign, 'black'))
 		}
+		
+		function initLine(data) {
+			let lineGeometry = new THREE.BufferGeometry().setFromPoints(data.points);
+			let line = new THREE.Line(lineGeometry, data.lineMaterial);
+			return line;
+		}
+
+		function radTodeg(T) {
+			return (T * (180 / Math.PI)).toFixed(1)
+		}
+
+		
 	</script>
 
 </body>
