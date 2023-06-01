@@ -1,9 +1,10 @@
 * {
-
+  margin: 0;
   padding: 0;
 }
 
 body {
+  padding: 0;
   margin: 0;
   background-color: whitesmoke;
 }
@@ -22,12 +23,13 @@ body {
 #menu {
   position: fixed;
   float: bottom;
-  bottom: 20px;
+  
+  left: 5px;
+  bottom: 5px;
   width: 100%;
   text-align: left;
   padding: 0;
   margin: 0;
-  margin-bottom: -20px;
   pointer-events: none;
 }
 /* #menu button {
