@@ -498,14 +498,13 @@
 
         function eyeShow() {
 
-            const map1 = new THREE.TextureLoader().load('./assets/img/eyeIconR.png');
-            const material1 = new THREE.SpriteMaterial({ map: map1, color: 0xffffff });
-
-            eye = new THREE.Sprite(material1);
-            eye.scale.set(2, 2, 2);
-            // eye.rotation.set(0,2,0)
-            eye.position.set(0, 14, 15);
-
+           const map1 = new THREE.TextureLoader().load('./assets/img/eyeIconR.png');
+            //const material1 = new THREE.SpriteMaterial({ map: map1, color: 0xffffff });
+            eye = new THREE.Mesh(new THREE.PlaneGeometry(), new THREE.MeshBasicMaterial({map: map1, side: THREE.DoubleSide, transparent: true }))
+            // eye = new THREE.Sprite(material1);
+            eye.scale.set(4, 4, 4);
+            eye.rotation.set(0,-1.57,0)
+            eye.position.set(0, params.d, params.v2);
             scene.add(eye);
         }
 
