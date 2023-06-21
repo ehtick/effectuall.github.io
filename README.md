@@ -7,5 +7,4 @@ Email: effectuallearning@gmail.com
 
 #effectuall.github.io
 
-Please visit
- https://online3d.github.io/
+[DONATE](https://www.paypal.com/donate?token=4m4PsRXdEwwnHtYT_INVbJkOAj5oMsFZtyOU0lzdo8Kzq0saB-eljih404FQLhdLyAvUptoidJA3eOMg)
