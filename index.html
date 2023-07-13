@@ -1,68 +1,212 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<meta charset="utf-8">
-		<title>Physics interactive 3D simulations</title>
-		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-		<link rel="shortcut icon" href="./files/favicon_white.ico" media="(prefers-color-scheme: dark)"/>
-		<link rel="shortcut icon" href="./files/favicon.ico" media="(prefers-color-scheme: light)" />
-		<link rel="stylesheet" type="text/css" href="./css/index.css">
-		<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-7VWWT4ZKR6"></script>
-		<script>
-		  window.dataLayer = window.dataLayer || [];
-		  function gtag(){dataLayer.push(arguments);}
-		  gtag('js', new Date());
-	
-		  gtag('config', 'G-7VWWT4ZKR6');
-		</script>
-		<meta name="google-site-verification" content="mz0TRB59UNqdTxhwzmXmGdgVPh8pB4YqjuUr-aWNGIY">
-		<meta name="keywords"
-    content=" webgl, threejs, effectual, learning, science, freelance, creative, mechanics, electicity, magnetism, thermodynamics, optics, quantum physics, pressure, kinetic theory of gases, Coulomb's law, Periodic Motion" />
-  		<meta name="author" content="sajith EP, effectuallearning@gmail.com" />
-  		<meta name="developer" content="" />
-	</head>
-	<body>
 
-		<div  id="panel">
+<head>
+  <meta charset="utf-8">
+  <title>Learning and Understanding Science with Interactive 3D Simulations| Effectual Learning </title>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <meta content="" name="keywords">
+  <meta content="" name="description">
 
-			<div  id="header">
-				<h1><a href="index.html"> EFFECTUALL<sup>3D</sup> PHYSICS</a></h1>
+  <!-- Favicons -->
+  <link href="files/favicon.png" rel="icon">
+  <link href="files/apple-touch-icon.png" rel="apple-touch-icon">
 
-				<div id="sections">
-					<a href="./Theory/index.html">Theory</a>
-					<span class="selected">Simulations</span>
-				</div>
+  <!-- Google Fonts -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
 
-				<div id="expandButton"></div>
-			</div>
+  <!-- Main Stylesheet File -->
+  <link href="css/main.css" rel="stylesheet">
+  <script async="" src="https://www.googletagmanager.com/gtag/js?id=G-7VWWT4ZKR6"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
 
-			<div id="panelScrim"></div>
-			
-			<div id="contentWrapper">
+    gtag('config', 'G-7VWWT4ZKR6');
+  </script>
+  <meta name="google-site-verification" content="mz0TRB59UNqdTxhwzmXmGdgVPh8pB4YqjuUr-aWNGIY">
 
-				<div id="inputWrapper">
-					<input placeholder="" type="text" id="filterInput" autocorrect="off" autocapitalize="off" spellcheck="false" />
-					<div id="exitSearchButton"></div>
-				</div>
-				<div id="home">  
-					<a href="index.html">
-						<img  src="./files/ic_home_black_24dp.svg" width="25" height="25" />
-					</a>
-				</div>
-				
-				<div id="content">
-					<img id="previewsToggler" src="./files/thumbnails.svg" width="20" height="20" />
-				</div>
-			</div>
-     
+</head>
 
-		</div>
-		
-			<iframe id="viewer" name="viewer" allow="fullscreen; xr-spatial-tracking;"  src="intro.html"></iframe>
-			<a id="button"  target="_blank" ><img src="../files/ic_code_black_24dp.svg"></a>
-		
-		
-		<script src="script.js"></script> 
+<body>
+ 
+  <!--==========================
+    Header
+  ============================-->
+  <header id="header">
+    <div class="container">
+
+      <div id="logo" class="pull-left">
+        <h1><a href="/" class="scrollto">Effect<span>uall</span></a></h1>
+        <!-- Uncomment below if you prefer to use an image logo -->
+        <!-- <a href="#body"><img src="img/logo.png" alt="" title="" /></a>-->
+      </div>
+
+      <nav id="nav-menu-container">
+        <ul class="nav-menu">
+          <li class="menu-active"><a href="#body">Home</a></li>
+          <li><a href="#about">About Us</a></li>
+          <li><a href="sims.html">Simulations</a></li>
+          <li><a href="./Theory/index.html">Projects</a></li>
+          <li><a href="#contact">Contact</a></li>
+        </ul>
+      </nav><!-- #nav-menu-container -->
+    </div>
+  </header><!-- #header -->
   
-	</body>
-	</html>
+  <!--==========================
+    Intro Section
+  ============================-->
+  <section id="intro">
+
+    <div class="intro-content">
+      <h2>Physics <span>Interactive 3D </span><br>Simulations!</h2>
+      <div>
+        <a href="sims.html" class="btn-get-started scrollto">Simulations</a>
+        <a href="./Theory/index.html" class="btn-projects scrollto">Projects</a>
+      </div>
+    </div>
+  </section><!-- #intro -->
+
+  <section id="about">
+    <div class="container">
+      <div class="section-header">
+        <h1><strong>Effect of Visual Learning - Effectual Learning</strong></h1>
+        <h1> Effectual Learning introduces a teaching methodology that uses technology as access points for guiding students in science.</h1>
+      </div>
+
+      <div class="row">
+
+        <div class="col-lg-6">
+          <div class="box wow fadeInLeft">
+            <p class="description">The interactive features available here, lets the educators and learners to interact with the immersive 3D environment.</p>
+          </div>
+        </div>
+
+        <div class="col-lg-6">
+          <div class="box wow fadeInRight">
+            <p class="description">Useful for all type of learners:- Visual learners, Reading/Writing learners, Kinesthetic learners.</p>
+          </div>
+        </div>
+
+        <div class="col-lg-6">
+          <div class="box wow fadeInLeft" data-wow-delay="0.2s">
+            <p class="description">The 3D interactive simulation modules here, are developed to present the topics and concepts in 3D graphics for an in-depth learning experience.</p>
+          </div>
+        </div>
+
+        <div class="col-lg-6">
+          <div class="box wow fadeInRight" data-wow-delay="0.2s">
+            <p class="description">The platform uses 3D models that enables virtual-reality assessment of the formulae, laws and theories and allows to comprehend the concepts better.</p>
+          </div>
+        </div>       
+      </div>
+      <h1> <strong>Understand what you learn with visual 3D elements ...</strong></h1>
+      <h1>Let's</h1>
+      <h1>
+        Explore, Evoke & Envision
+      </h1>
+      <h1>Select a Physics Interactive Simulation from the sidebar to see the 3D visualisation here.</h1>
+    </div>
+  </section><!-- #services -->
+  <article> 
+    <div id="app" class="app" >
+    <div class="aSlide" id="aSlide" style="display: none;">
+      <iframe src="" name="iframe" id="iframe" title="Iframe" ></iframe>
+      <a id="viewButton"> <img src="files/ic_code_black_24dp.svg" alt="viewer"></a>
+    </div>
+  </div>
+  <div class="content">
+    <div id="row" class="row">
+
+      <a id="topics" class="title"></a>
+    </div>
+  </div>
+  
+  <div id="contact">
+      <p> All of the simulations in this site are created by me, <a href="mailto:effectuallearning@gmail.com">E.P Sajitha</a>. Please click on my name to send feedback about the simulation contents, visualisations or suggestions for new simulations.
+   
+        <br> More simulations' modules from Science, Technology, Engineering, and Mathematics (STEM) Education are to be added at regular intervals. 
+      </p>
+       <p>The ensemble of Interactive Physics simulations in 3D are developed using open source Three.js-JavaScript 3D Library.</p>
+ 
+        <p>
+      <strong>Three.js</strong> is a cross-browser JavaScript library and application programming interface used to create and display animated 3D computer graphics in a web browser using WebGL. The source code is hosted in a repository on GitHub. Three.js allows the creation of graphical processing unit (GPU)-accelerated 3D animations using the JavaScript language</p>
+    </div>
+    </article>
+
+  <footer>
+    <div style=" color:  #050e6c; font-weight: bold;">
+      Content still in development. The interactive 3D simulation created using open source
+      Three.js-JavaScript 3D Library. © Copyright 2020 by E.P Sajitha (Ph.D). All rights reserved. Any suggestion appreciated.
+      <br>
+      Email: effectuallearning@gmail.com
+
+    </div>
+  </footer>
+<script>
+ let viewDiv = document.getElementById('aSlide')
+  init();
+  async function init() {
+
+    let viewer = document.getElementById('iframe')
+   
+    const viewSrcButton = document.getElementById('viewButton');
+    const validRedirects = new Map();
+
+    const row = document.getElementById('row');
+
+    const files = await (await fetch('files.json')).json();
+    const container = document.createElement('div');
+    const topics = document.getElementById('topics');
+    row.appendChild(topics)
+
+    for (const key in files) {
+
+      const section = files[key];
+      const each = document.createElement('div');
+      let X = `
+             <a class = "title">${key} </a>`;
+      each.innerHTML = X.trim();
+      row.appendChild(each.firstChild);
+      for (let i = 0; i < section.length; i++) {
+
+        const file = section[i];
+        const link = 'Simulations/' + file 
+        const template = `
+              
+                <div id="${file}"  class="column"> 
+                    <img class="image" style="width:100%" src="../assets/screenshots/${file}.jpg" loading="lazy"  target="iframe" />
+                    <div class="middle">
+                      <div class="text">${getName(file)}</div>
+                    </div>
+                  </div>
+                `;
+        const div = document.createElement('div');
+        div.innerHTML = template.trim();
+        row.appendChild(div.firstChild);
+        let selected = document.getElementById(file);
+        selected.href = './Simulations/' +file + '.html';
+        selected.addEventListener('click', function (e) {          
+          window.open('./Simulations/' + file + '.html')   
+        });
+      }
+    } 
+   
+  }
+
+
+  function getName(file) {
+
+    const name = file.split('_');
+    name.shift();
+    return name.join(' ');
+
+  }
+
+</script>
+</body>
+</html>
