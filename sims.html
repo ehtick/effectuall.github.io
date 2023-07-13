@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<title>Physics interactive simulations</title>
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<meta content="" name="keywords">
+	<meta content="" name="description">
+
+	<!-- Favicons -->
+	<link href="files/favicon.png" rel="icon">
+	<link href="files/apple-touch-icon.png" rel="apple-touch-icon">
+
+	<link rel="stylesheet" type="text/css" href="./css/index.css">
+	<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-7VWWT4ZKR6"></script>
+	<script>
+		window.dataLayer = window.dataLayer || [];
+		function gtag() { dataLayer.push(arguments); }
+		gtag('js', new Date());
+
+		gtag('config', 'G-7VWWT4ZKR6');
+	</script>
+	<meta name="google-site-verification" content="mz0TRB59UNqdTxhwzmXmGdgVPh8pB4YqjuUr-aWNGIY">
+
+</head>
+
+<body>
+
+	<div id="panel">
+
+		<div id="header">
+			<h1><a href="index.html"> EFFECTUALL<sup>3D</sup> PHYSICS</a></h1>
+
+			<div id="sections">
+				<a href="./Theory/index.html">Theory</a>
+				<span class="selected">Simulations</span>
+			</div>
+
+			<div id="expandButton"></div>
+		</div>
+
+		<div id="panelScrim"></div>
+
+		<div id="contentWrapper">
+
+			<div id="inputWrapper">
+				<input placeholder="" type="text" id="filterInput" autocorrect="off" autocapitalize="off"
+					spellcheck="false" />
+				<div id="exitSearchButton"></div>
+			</div>
+			<div id="home">
+				<a href="index.html">
+					<img src="./files/ic_home_black_24dp.svg" width="25" height="25" />
+				</a>
+			</div>
+
+			<div id="content">
+				<img id="previewsToggler" src="./files/thumbnails.svg" width="20" height="20" />
+			</div>
+		</div>
+
+
+	</div>
+
+	<iframe id="viewer" name="viewer" allow="fullscreen; xr-spatial-tracking;"
+		src="./Simulations/Optics_Compound_Microscope.html"></iframe>
+	<a id="button" target="_blank"><img src="../files/ic_code_black_24dp.svg"></a>
+
+
+	<script src="script.js"></script>
+
+</body>
+
+</html>
