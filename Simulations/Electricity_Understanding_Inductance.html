@@ -10,7 +10,7 @@
 
 <body>
     <div id="topmenu">Inductor - Understanding inductance</div>
-    <div id="menu">
+    <div id="sidemenu">
         L = N
         <div class="fraction">
             <span class="fup">&Delta; &phi;</span>
@@ -22,14 +22,24 @@
             <span class="fup"><a id="factor-el">&mu;<sub>0</sub>N<sup>2</sup></a>A</span>
             <span class="bar">/</span>
             <span class="fdn">&ell;</span>
-        </div> <br> <a id="calDisplay">Unit of inductance is Henry, (H)</a><br>
-                <div style="font-weight: bolder;"><a id="message-el">Self-inductance: The effect of Faraday’s law of induction of a device on itself. For a changing current, the magnetic field and flux linked with the coil also changes there by inducing a counter emf, as required by Lenz’s law.</a></div>
+        </div> <br>Unit of inductance is Henry, (H)<br>
+    </div>
+    <div id="menu">
+        <div style="font-weight: bolder;"><a id="message-el"></a></div>
+        <a id="calDisplay"></a><br>
+
         <div style="display: none;" id="freq"><button id="lowF">LOW f</button><button id="highF">HIGH f</button></div>
         <button style="background-color: rgb(164, 26, 26);" id="flow">OFF</button>
         <button id="flip">DC VOLTAGE</button>
-       
+        <button onClick="inductionSite()">INDUCTION</button>
 
     </div>
+    <script>
+        function inductionSite() {
+
+            window.open("Magnetism_Electromagnetic_Induction.html", "_self")
+        }
+    </script>
     <script type="module">
 
         import * as THREE from '../build/three.module.js'
@@ -46,11 +56,11 @@
         let SELECTED;
         let raycaster = new THREE.Raycaster();
         let pointer = new THREE.Vector2();
-        let parent, iDisplay, connector = new THREE.Group(), dMaterial, dSlab;
+        let parent, iDisplay, vDisplay, connector = new THREE.Group(), dMaterial, dSlab;
         let labelGeometry = new THREE.PlaneBufferGeometry(10, 10);
         let reqAC, positions, reqID, A = 1;
         let intensity = 0, group;
-
+        let iplus, iminus;
         const clock = new THREE.Clock();
         let redPoints, bluePoints, waveform;
         let INDUCTOR = new THREE.Group();
@@ -67,6 +77,7 @@
             color: 0xb87333,
             side: THREE.DoubleSide,
         });
+        let voltageMaterial = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, transparent: true });
         let chargeMaterial = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, transparent: true });
         let plusMaterial = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, transparent: true });
         let minusMaterial = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, transparent: true });
@@ -76,10 +87,8 @@
         const messages = {
             0: ' Impedence of the Inductor, X<sub>L</sub> = 2&pi; f L ',
             1: ' For a given inductor, impedence depends on the frequency (f) of the ac voltage source. ',
-            2: ' Unit of inductance is Henry, (H) ',
-            3: ' Self-inductance: The effect of Faraday’s law of induction of a device on itself. For a Changing current through a coil, the magnetic field and flux also changeinds there by inducing a counter emf, as required by Lenz’s law.',
-            4: 'Charging - discharging of the capacitor, depends on the frequency of the AC voltage',
-            6: 'Discharging of the capacitor happens for a while and then returns to its native state'
+            2: ' For a changing current, the Magnetic Field and Flux linked with the coil changes there by inducing a counter emf. (As required by Lenz’s Law.) ',
+            3: ' Self-Inductance: The effect of Faraday’s Law of Induction of a device on itself.'
         }
 
         const buttonFlip = document.getElementById('flip');
@@ -104,13 +113,13 @@
             f: [30, 1, 1],
             points: 200 // i * 21 total points row x column
         }
-        
-
+        calDisplay.innerHTML = messages[2];
+        messageEl.innerHTML = messages[3];
 
         init()
         animate()
 
-        
+
         function buttonAction() {
             buttonFlow.addEventListener('click', function () {
                 flow = !flow;
@@ -324,46 +333,50 @@
                 const A = INDUCTOR.children[0];
                 A.parent.remove(A);
             }
+            vDisplay = makeText(220, 130, -180, 50, voltageMaterial, 'Increasing Current', "rgba(0, 0, 0, 0)", "rgba(0, 05, 05, 1)")
+            vDisplay.rotation.y = 0;
+            scene.add(vDisplay)
             iDisplay = makeText(-200, 50, 0, 35, chargeMaterial, 'Induced EMF', "rgba(0, 0, 0, 0.1)", "rgba(0, 05, 05, 1)")
             iDisplay.rotation.y = 1.57;
             INDUCTOR.add(iDisplay);
-            plus = makeText(80, 20, 70, 40, plusMaterial, '+', "rgba(0, 0, 0, 0)", "rgba(0, 05, 05, 1)")
-            plus.rotation.y = 1.57;
-            INDUCTOR.add(plus);
-            let A = plus.clone();
-            A.position.set(-200, 50, 140)
-            INDUCTOR.add(A)
-            minus = makeText(80, 20, -70, 50, minusMaterial, '-', "rgba(0, 0, 0, 0)", "rgba(0, 05, 05, 1)")
-            minus.rotation.y = 1.57;
-            INDUCTOR.add(minus);
-            let B = minus.clone();
-            B.position.set(-200, 50, -140)
-            INDUCTOR.add(B);
+            iplus = makeText(-200, 50, 140, 40, plusMaterial, '+', "rgba(0, 0, 0, 0)", "rgba(0, 05, 05, 1)")
+            iplus.rotation.y = 1.57;
+            iminus = makeText(-200, 50, -140, 50, minusMaterial, '-', "rgba(0, 0, 0, 0)", "rgba(0, 05, 05, 1)")
+            iminus.rotation.y = 1.57;
+            INDUCTOR.add(iminus, iplus);
 
+            // vDisplay.visible =false;
             for (let i = 0, l = INDUCTOR.children.length; i < l; i++) {
                 const A = INDUCTOR.children[i];
                 A.visible = false;
             }
-            // plus.visible = false;
-            // minus.visible = false;
+
 
         }
 
         function inducedEmf() {
-            // params.k = sy > 1 ? 81 * sy : 80 * sy;
-            // console.log(s, intensity)  if (intensity <= 20) {
-            // let count = charge.geometry.attributes.position.count;
+            if (knob.rotation.y > -5) {
+                knob.rotation.y -= 0.01;
+                reqID = requestAnimationFrame(inducedEmf)
+            } else if (knob.rotation.y <= -5) {
 
+                cancelAnimationFrame(reqID)
+                onscaleAction()
+            }
+        }
+
+        function onscaleAction() {
             if (s >= 0) {
                 bulbMaterial.emissiveIntensity = intensity;
                 bulbLight.intensity = intensity;
+
                 for (let i = 0, l = INDUCTOR.children.length; i < l; i++) {
                     const A = INDUCTOR.children[i];
                     s = s < 0 ? 0 : s;
 
                     A.scale.set(s, s, s);
                 }
-                reqID = requestAnimationFrame(inducedEmf)
+                reqID = requestAnimationFrame(onscaleAction)
 
             } else {
                 s = 0;
@@ -371,14 +384,12 @@
             }
             s = s - 0.003
             intensity = intensity + 0.08;
-
-
-            t = t + 1
         }
 
         function chargeAction() {
 
             if (acVolt) {
+                t = 0;
                 makeWaveform(params.f[0], params.f[1], params.f[2])
                 periodicAction()
 
@@ -398,24 +409,28 @@
                 buttonFlow.disabled = true;
                 buttonFlow.style.cursor = 'default';
                 actions['Action'].play();
-                actions['knob_reset'].reset().stop();
-                actions['Action_knob'].setDuration(5).play();
-                // Action_knob
                 buttonFlow.innerText = 'ON';
                 buttonFlow.style.backgroundColor = 'rgb(26, 164, 26)';
-                plus.visible = true;
-                minus.visible = true;
-                s = 1;
-                for (let i = 0, l = INDUCTOR.children.length; i < l; i++) {
-                    const A = INDUCTOR.children[i];
-                    A.visible = true;
-                    A.scale.set(1, 1, 1);
-                }
-                setTimeout(function () {
-                    inducedEmf();
-                }, 5000)
-                setTimeout(function () {
 
+                setTimeout(function () {
+                    iminus.position.z = -140
+                    iplus.position.z = 140
+                    inducedEmf();
+                    voltageMaterial.map = new THREE.CanvasTexture(makeLabelCanvas(50, 'Increasing Current', "rgba(0, 0, 0, 0)", "rgba(05, 55, 05, 1)"));
+                }, 1000)
+
+                setTimeout(function () {
+                    plus.visible = true;
+                    minus.visible = true;
+                    s = 1;
+                    for (let i = 0, l = INDUCTOR.children.length; i < l; i++) {
+                        const A = INDUCTOR.children[i];
+                        A.visible = true;
+                        A.scale.set(1, 1, 1);
+                    }
+                }, 2500)
+                setTimeout(function () {
+                    voltageMaterial.map = new THREE.CanvasTexture(makeLabelCanvas(50, 'Constant Current', "rgba(0, 0, 0, 0)", "rgba(05, 55, 05, 1)"));
                     buttonFlow.disabled = false;
                     buttonFlow.style.cursor = 'pointer';
                 }, 10000)
@@ -423,7 +438,27 @@
 
             } else if (!flow) {
                 s = 1, intensity = 20;
+                buttonFlow.disabled = true;
+                buttonFlow.style.cursor = 'default';
+                voltageMaterial.map = new THREE.CanvasTexture(makeLabelCanvas(50, 'Decreasing Current', "rgba(0, 0, 0, 0)", "rgba(05, 55, 05, 1)"));
+                    
+                setTimeout(function () {
+                    iminus.position.z = 140
+                    iplus.position.z = -140
+                    offEmf()
+                    
+                }, 1000)
 
+                setTimeout(function () {
+                    plus.visible = true;
+                    minus.visible = true;
+                    s = 1;
+                    for (let i = 0, l = INDUCTOR.children.length; i < l; i++) {
+                        const A = INDUCTOR.children[i];
+                        A.visible = true;
+                        A.scale.set(1, 1, 1);
+                    }
+                }, 2500)
                 for (let i = 0, l = INDUCTOR.children.length; i < l; i++) {
                     const A = INDUCTOR.children[i];
                     A.visible = true;
@@ -431,19 +466,23 @@
                     A.scale.set(1, 1, 1);
                 }
 
-                actions['Action_knob'].reset().stop();
-                actions['knob_reset'].play();
-                setTimeout(function () {
-                    offEmf()
-                }, 1500)
+                // actions['Action_knob'].reset().stop();
+                // actions['knob_reset'].play();
                 setTimeout(function () {
 
                     plus.visible = false;
                     minus.visible = false;
+                }, 1000)
+                
+
+                setTimeout(function () {
+                    buttonFlow.disabled = false;
+                    buttonFlow.style.cursor = 'pointer';
                     actions['Action'].reset().stop();
                     buttonFlip.disabled = false;
                     buttonFlip.style.cursor = 'pointer';
-                }, 5000)
+                    voltageMaterial.map = new THREE.CanvasTexture(makeLabelCanvas(50, 'No Current', "rgba(0, 0, 0, 0)", "rgba(05, 55, 05, 1)"));
+                }, 18000)
 
                 buttonFlow.innerText = 'OFF';
                 buttonFlow.style.backgroundColor = 'rgb(164, 26, 26)';
@@ -453,14 +492,27 @@
         }
 
         function offEmf() {
-            if (s >= 0) {
+           
+            if (knob.rotation.y > -5.1 && knob.rotation.y < 0 ) {
+                
+                knob.rotation.y += 0.005;
+                reqID = requestAnimationFrame(offEmf)
+            } else if (knob.rotation.y >= 0) {
+
+                cancelAnimationFrame(reqID)
+                offscaleAction()
+            }           
+        }
+
+        function offscaleAction() {
+             if (s >= 0) {
                 bulbMaterial.emissiveIntensity = intensity;
                 bulbLight.intensity = intensity;
                 for (let i = 0, l = INDUCTOR.children.length; i < l; i++) {
                     const A = INDUCTOR.children[i];
                     A.scale.set(s, s, s);
                 }
-                reqID = requestAnimationFrame(offEmf)
+                reqID = requestAnimationFrame(offscaleAction)
 
             } else {
 
@@ -476,8 +528,6 @@
             }
             s = s - 0.005
             intensity = intensity - 0.01;
-
-
         }
 
         function periodicAction() {
@@ -488,16 +538,24 @@
                 buttonFlow.innerText = 'ON';
                 buttonFlow.style.backgroundColor = 'rgb(26, 164, 26)';
                 knob.rotation.y = -1.4;
-
-                setTimeout(function () {
-                    for (let i = 0, l = INDUCTOR.children.length; i < l; i++) {
-                        const A = INDUCTOR.children[i];
-                        A.visible = true;
-                    }
-                    drawWaveform()
-                    INDUCTOR.position.set(-250, 150, 100)
-                    INDUCTOR.rotation.set(0, 1.57, 0)
-                }, 500)
+                bulbMaterial.emissiveIntensity = 20;
+                bulbLight.intensity = 20;
+                for (let i = 0, l = INDUCTOR.children.length; i < l; i++) {
+                    const A = INDUCTOR.children[i];
+                    A.visible = true;
+                }
+                drawWaveform()
+                INDUCTOR.position.set(-250, 150, 100)
+                INDUCTOR.rotation.set(0, 1.57, 0)
+                // setTimeout(function () {
+                //     for (let i = 0, l = INDUCTOR.children.length; i < l; i++) {
+                //         const A = INDUCTOR.children[i];
+                //         A.visible = true;
+                //     }
+                //     drawWaveform()
+                //     INDUCTOR.position.set(-250, 150, 100)
+                //     INDUCTOR.rotation.set(0, 1.57, 0)
+                // }, 500)
 
             } else {
 
@@ -507,6 +565,7 @@
                 minus.visible = false;
                 buttonFlow.innerText = 'OFF';
                 buttonFlow.style.backgroundColor = 'rgb(164, 26, 26)';
+
                 INDUCTOR.position.set(0, 0, 0)
                 INDUCTOR.rotation.set(0, 0, 0)
                 for (let i = 0, l = INDUCTOR.children.length; i < l; i++) {
@@ -517,7 +576,10 @@
 
                     vWave.geometry.setDrawRange(0, 0);
                     iWave.geometry.setDrawRange(0, 0);
-                    t = 0
+                    t = 0;
+                    bulbMaterial.emissiveIntensity = 0;
+                    bulbLight.intensity = 0;
+
                 }, 500)
                 makeWaveform(params.f[0], params.f[1], params.f[2])
             }
@@ -602,10 +664,10 @@
                     objects.push(knob);
                     knob.rotation.y = 0;
 
-                    let plus = model.getObjectByName('plus');
-                    // plus.position.set(1, 0.2, 0.6);
-                    let minus = model.getObjectByName('minus');
-                    // minus.position.set(1, 0.2, - 0.6);
+                    plus = model.getObjectByName('plus');
+                    plus.position.set(1, 0.2, 0.6);
+                    minus = model.getObjectByName('minus');
+                    minus.position.set(1, 0.2, - 0.6);
 
 
                     plus.visible = false;
@@ -850,9 +912,9 @@
                 points: [new THREE.Vector3(a, d, c), new THREE.Vector3(a + w, d, c)],
                 lineMaterial: lmaterial
             }))
-            minus = makeText(a + 180, b + 70, c, 20, minusMaterial, 'I- ', "rgba(0, 0, 0, 0)", "rgba(0, 0, 255, 1)");
-            plus = makeText(a + 180, b + 90, c, 20, plusMaterial, 'V- ', "rgba(0, 0, 0, 0)", "rgba(255, 0, 0, 1)");
-            INDUCTOR.add(plus, minus)
+            // minus = makeText(a + 180, b + 70, c, 20, minusMaterial, 'I- ', "rgba(0, 0, 0, 0)", "rgba(0, 0, 255, 1)");
+            // plus = makeText(a + 180, b + 90, c, 20, plusMaterial, 'V- ', "rgba(0, 0, 0, 0)", "rgba(255, 0, 0, 1)");
+            // INDUCTOR.add(plus, minus)
 
 
             let wavePoints = [];
