@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<title>LC Oscillator</title>
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<link rel="shortcut icon" href="../files/favicon_white.ico" media="(prefers-color-scheme: dark)" />
+	<link rel="shortcut icon" href="../files/favicon.ico" media="(prefers-color-scheme: light)" />
+	<link rel="stylesheet" type="text/css" href="../css/style-page.css">
+	<style>
+		.label {
+			font-weight: bold;
+			font-size: 12px;
+
+		}
+	</style>
+	<!-- Google tag (gtag.js) -->
+	<script async src="https://www.googletagmanager.com/gtag/js?id=G-0JWHY29KD2"></script>
+	<script>
+		window.dataLayer = window.dataLayer || [];
+		function gtag() { dataLayer.push(arguments); }
+		gtag('js', new Date());
+
+		gtag('config', 'G-0JWHY29KD2');
+	</script>
+	<meta name="google-site-verification" content="mz0TRB59UNqdTxhwzmXmGdgVPh8pB4YqjuUr-aWNGIY">
+
+</head>
+
+<body>
+
+	<div id="topmenu">
+		<div>
+			LC Oscillator
+		</div>
+
+	</div>
+
+	<div id="sidemenu">
+
+		<div class="fraction">
+			<span class="fup"></span>
+			<span class="bar"></span>
+			<span class="fdn"></span>
+		</div>
+		<a>
+		</a>
+		<br>
+
+	</div>
+
+	<div id="menu">
+
+
+		<a id="message-el" style="font-weight: bolder; text-transform:uppercase">CONNECT TO CELL</a><br>
+
+		<button id="isStop">SWITCH</button>
+
+	</div>
+	<script>
+		function theorySite() {
+
+			window.open("", "_self")
+		}
+	</script>
+
+	<script type="module">
+		import * as THREE from '../build/three.module.js';
+		import { OrbitControls } from '../jsm/controls/OrbitControls.js';
+		import { CSS2DRenderer, CSS2DObject } from '../jsm/renderers/CSS2DRenderer.js';
+		import { Resizer } from "./js/labelResizer.js";
+		import Sizes from './js/Utils/Sizes.js';
+		import { TWEEN } from '../jsm/libs/tween.module.min.js';
+
+		let renderer, scene, camera, controls, labelRenderer;
+		let capacitor, inductor, flip, labelDiv, labelDiv1, redPoints, bluePoints, requestID
+		let drawCount = 151, A = 1, isStop = true, isCell = false, N = 151, ARROWS = new THREE.Group(), line = 0, sign = 1;
+
+		let oscillator = null;
+		const messageElement = document.getElementById('message-el');
+		const buttonStop = document.getElementById('isStop');
+
+
+		window.onload = function () {
+			start()
+		}
+
+		function init() {
+			// camera = new THREE.PerspectiveCamera(20, config.width / config.height, 1, 50000);
+
+			// camera.position.set(1750, 700, 1500);
+			scene = new THREE.Scene();
+			scene.background = new THREE.Color(0xbfd1e5);
+
+
+			camera = createCamera(20, 1750, 700, 1500);
+			camera.lookAt(scene.position);
+			scene.add(new THREE.GridHelper(1000, 10));
+			createRenderer()
+			createControls(-180, 130, -30);
+			createLights();
+			createCapacitor()
+			createWires()
+			console.log('here')
+			labelDiv = document.createElement("div");
+			labelDiv.className = "label";
+			labelDiv.style.fontSize = '20px';
+			labelDiv.textContent = "DISCHARGING";
+			labelDiv.style.color = "red";
+			const chargeLabel = new CSS2DObject(labelDiv);
+			chargeLabel.position.set(0, 280, 0);
+			scene.add(chargeLabel)
+			capacitor.add(chargeLabel);
+
+
+			labelDiv1 = document.createElement("div");
+			labelDiv1.className = "label";
+			labelDiv1.style.fontSize = '20px';
+			labelDiv1.textContent = "MAGNETIZING";
+			labelDiv1.style.color = "green";
+			const inductorLabel = new CSS2DObject(labelDiv1);
+			scene.add(inductorLabel)
+			inductorLabel.position.set(50, -50, 180);
+
+			createArrows()
+
+			render()
+
+			redPoints = points(150, 0xff0000, 50)
+			bluePoints = points(150, 0x0000ff, -50)
+			scene.add(redPoints)
+			scene.add(bluePoints)
+			redPoints.geometry.setDrawRange(0, 0);
+			bluePoints.geometry.setDrawRange(0, 0);
+
+			let capLabel = labels('CAPACITOR', new THREE.Vector3(0, 130, 0))
+			capacitor.add(capLabel);
+			let indLabel = labels('INDUCTOR', new THREE.Vector3(0, 60, 200))
+			inductor.add(indLabel);
+			inductor.add(inductorLabel);
+			let cell = createCell();
+			cell.position.x = -500;
+			scene.add(cell)
+
+			window.addEventListener("resize", onWindowResize);
+			buttonStop.addEventListener('click', function () {
+				isStop = !isStop
+				isCell = !isCell
+				load(isCell, isStop)
+
+			});
+		}
+
+		function createArrows() {
+			scene.add(ARROWS)
+			ARROWS.position.set(92, 50, 0)
+			let arrow = new THREE.Mesh(new THREE.BoxGeometry(2.5, 2.5, 500), new THREE.MeshBasicMaterial({ color: 'blue' }))
+			let end = new THREE.Mesh(new THREE.ConeGeometry(8, 25, 5).rotateX(1.57).translate(0, 0, 250), new THREE.MeshBasicMaterial({ color: 'red' }))
+			arrow.add(end)
+			// arrow.position.set(92, 40, 0)
+
+			scene.add(ARROWS)
+			let arrow1 = new THREE.Group();
+			// arrow2 = arrow.clone()
+			let arrow2 = new THREE.Group();
+			ARROWS.add(arrow, arrow1, arrow2)
+			let pos = [
+				new THREE.Vector3(15, 0, 0),
+				new THREE.Vector3(-15, 0, 0),
+				new THREE.Vector3(0, -15, 0),
+				new THREE.Vector3(0, 15, 0),
+			]
+
+			for (let i = 0; i < 4; i++) {
+				let mesh = arrow.clone()
+				mesh.position.copy(pos[i])
+				arrow1.add(mesh)
+				// console.log(i, pos[i])
+			}
+			let pos1 = [
+				new THREE.Vector3(30, 0, 0),
+				new THREE.Vector3(-30, 0, 0),
+				new THREE.Vector3(20, -20, 0),
+				new THREE.Vector3(20, 20, 0),
+				new THREE.Vector3(-20, -20, 0),
+				new THREE.Vector3(-20, 20, 0),
+				new THREE.Vector3(0, 30, 0),
+				new THREE.Vector3(0, -30, 0),
+			]
+
+			for (let i = 0; i < 8; i++) {
+				let mesh = arrow.clone()
+				mesh.position.copy(pos1[i])
+				arrow2.add(mesh)
+				// console.log(i, pos1[i])
+			}
+
+			for (let i = 0; i < ARROWS.children.length; i++) {
+				// console.log(ARROWS.children[i])
+				ARROWS.children[i].scale.x = 0
+				ARROWS.children[i].scale.y = 0
+			}
+		}
+
+		function createCamera(view, x, y, z) {
+
+			let fov = view;
+			const aspect = window.innerWidth / window.innerHeight;
+			const near = 1;
+			const far = 50000;
+
+			camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+
+			camera.position.set(x, y, z);
+			return camera
+		}
+
+		function createCapacitor() {
+			capacitor = new THREE.Group();
+			let cMaterial = new THREE.MeshPhongMaterial({
+				color: 'orange',
+				transparent: true,
+				opacity: 0.3
+			});
+			let geo = new THREE.BoxGeometry(200, 250, 10).translate(0, 125, 0)
+
+			let baseGeo = new THREE.BoxGeometry(200, 10, 10.2).translate(0, 0, 0)
+			let baseMaterial = new THREE.MeshPhongMaterial({
+				color: 0xb87333
+			});
+			let base1 = new THREE.Mesh(baseGeo, baseMaterial)
+			let plate1 = new THREE.Mesh(geo, cMaterial)
+
+			plate1.add(base1)
+			let plate2 = plate1.clone()
+			plate2.rotation.y = 3.14;
+			capacitor.add(plate1)
+			capacitor.add(plate2)
+			plate1.position.z = -50;
+			plate2.position.z = 50;
+			let end1 = base1.clone()
+			end1.scale.set(0.5, 10, 1)
+			inductor = addSpring()
+			inductor.position.set(92, 50, -160)
+			let end2 = end1.clone()
+			end1.position.set(0, 0, 320)
+			inductor.add(end1, end2)
+			capacitor.position.set(-250, 0, 0)
+			scene.add(capacitor, inductor)
+			let cell = createCell();
+			cell.position.x = -500;
+			scene.add(cell)
+
+		}
+
+		function createControls(x, y, z) {
+			controls = new OrbitControls(camera, renderer.domElement);
+			controls.enablePan = true;
+			controls.enableZoom = true;
+			controls.target.set(x, y, z);
+			controls.enableDamping = true;
+			controls.dampingFactor = 0.05;
+			controls.rotateSpeed = 0.1;
+			controls.update();
+			controls.addEventListener('change', render);
+
+		}
+
+		function createRenderer() {
+			// create the renderer
+			renderer = new THREE.WebGLRenderer({ antialias: true });
+			renderer.alpha = true;
+			renderer.setPixelRatio(window.devicePixelRatio);
+			renderer.setSize(window.innerWidth, window.innerHeight);
+			renderer.useLegacyLights = true;
+			// renderer.outputEncoding = THREE.sRGBEncoding;
+			document.body.appendChild(renderer.domElement);
+
+			labelRenderer = new CSS2DRenderer();
+			labelRenderer.setSize(window.innerWidth, window.innerHeight);
+			labelRenderer.domElement.style.position = 'absolute';
+			labelRenderer.domElement.style.top = '0px';
+			labelRenderer.domElement.style.pointerEvents = 'none';
+			document.body.appendChild(labelRenderer.domElement);
+		}
+
+		function createLights() {
+			const light = new THREE.DirectionalLight(0xffffff, 2);
+			const ambilight = new THREE.AmbientLight(0xffffff, .20);
+			light.position.set(0, 10, 5);
+			scene.add(light, ambilight)
+		}
+
+		function onWindowResize() {
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+
+			renderer.setSize(window.innerWidth, window.innerHeight);
+			labelRenderer.setSize(window.innerWidth, window.innerHeight);
+			render();
+		}
+
+		function render() {
+
+			renderer.render(scene, camera);
+			labelRenderer.render(scene, camera);
+		}
+
+		function animate() {
+			requestAnimationFrame(animate);
+			TWEEN.update();
+			controls.update();
+			render();
+
+		}
+
+		function points(points, col, posZ) {
+			//create chargingpoints geometry
+			const geometry = new THREE.BufferGeometry();
+			const positions = new Float32Array(points * 3); // 3 vertices per point
+			geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+			let drawCount = 0; // draw the first 2 points, only
+
+
+			const material = new THREE.PointsMaterial({ size: 25, color: col });
+
+			let chargePoints = new THREE.Points(geometry, material);
+
+
+			chargePoints.position.z = posZ;
+			// updateReds();
+			let i = 0;
+			let x, y, z, index;
+			x = -250 - 90;
+			y = 20 // 80
+			index = 0;
+			z = 0;
+			for (let j = 0, l = N; j < l; j++) {
+				i = i + 1
+
+				y += (Math.random() - 0.5) * 1;
+				z += 0;
+				positions[index++] = x;
+				positions[index++] = y;
+				positions[index++] = z;
+
+				x += 20;
+
+				if (i == 10) {
+					i = 0
+					x = -250 - 90
+					y += 15
+				}
+				// drawCount1 = (drawCount1 + 1);
+			}
+			// scene.add(chargePoints);
+			return chargePoints
+		}
+
+		function labels(name, pos) {
+			const text = document.createElement('div');
+			text.className = 'label';
+			// text.style.color = 'red';
+			text.textContent = name;
+
+			const label = new CSS2DObject(text);
+			label.position.copy(pos)
+			return label
+		}
+
+		function start() {
+			init()
+			console.log('initial loading')
+			flip.rotation.z = -0.5
+			ARROWS.visible = false
+			labelDiv.textContent = ''
+			labelDiv1.textContent = ''
+			animate()
+		}
+
+		function load(cell, osci) {
+			
+
+			if (cell) {
+				ARROWS.visible = false
+				drawCount = 0
+				redPoints.geometry.setDrawRange(0, drawCount)
+				bluePoints.geometry.setDrawRange(0, drawCount)
+				messageElement.innerHTML = 'CAPACITOR CHARGING'
+				labelDiv.textContent = ''
+				labelDiv1.textContent = ''
+				flip.rotation.z = 0.5
+				// console.log('action cell connect')
+				cellConnected()
+			} else {
+
+				stop(osci)
+				console.log(cell, osci)
+			}
+
+		}
+
+		function cellConnected() {
+			cancelAnimationFrame(requestID)
+			ARROWS.visible = false
+			if (drawCount < N) {
+				// console.log('action cell connect')
+			redPoints.geometry.setDrawRange(0, drawCount)
+			bluePoints.geometry.setDrawRange(0, drawCount)
+			drawCount = drawCount + A
+			requestID = requestAnimationFrame(cellConnected)
+			}else if (drawCount >= N) {
+				messageElement.innerHTML = 'FLIP SWITCH'
+				// console.log('end animation')
+				cancelAnimationFrame(requestID)
+			}
+			
+		}
+
+		function stop(action) {
+			if (action) {
+				console.log(action, 'action LC oscillator')
+				messageElement.innerHTML = 'LC OSCILLATOR'
+				flip.rotation.z = -0.5
+				A = -1
+				drawCount = N
+				changeAction()
+			}
+		}
+
+		function periodicAction() {
+
+			drawCount = drawCount - A
+			redPoints.geometry.setDrawRange(0, drawCount)
+			bluePoints.geometry.setDrawRange(0, drawCount)
+
+
+		}
+
+		function changeAction() {
+			ARROWS.visible = true
+			// console.log(drawCount)
+			if (drawCount == 0 || drawCount == N) {
+
+				A *= -1
+				labelDiv.textContent = A > -1 ? "DISCHARGING" : "CHARGING";
+				labelDiv1.textContent = A > -1 ? "MAGNETIZING" : "DE-MAGNETIZING";
+
+				line = A > -1 ? 0 : 1;
+				// sign = line == 0 ? -1 : 1;
+				if(line==0) {
+					sign *= -1
+				}else if (line==1) {
+					sign *= 1
+				}
+
+				if (A < 0) {
+
+					redPoints.material.color.r = redPoints.material.color.r < 1 ? 1 : 0;
+					redPoints.material.color.b = redPoints.material.color.b < 1 ? 1 : 0;
+					bluePoints.material.color.r = bluePoints.material.color.r < 1 ? 1 : 0;
+					bluePoints.material.color.b = bluePoints.material.color.b < 1 ? 1 : 0;
+				}
+
+			}
+			periodicAction()
+			magLines()
+			requestID = requestAnimationFrame(changeAction)
+		}
+
+		function magLines() {
+
+			if (line === 0) {
+				// console.log('mag lines appear large', sign)
+				new TWEEN.Tween(ARROWS.children[0].scale)
+					.to({ x: 1, y: 1, z: sign }, 1000)
+					.easing(TWEEN.Easing.Cubic.Out)
+					.start()
+				new TWEEN.Tween(ARROWS.children[1].scale)
+					.to({ x: 1, y: 1, z: sign }, 1000)
+					.easing(TWEEN.Easing.Cubic.Out)
+					.start()
+				new TWEEN.Tween(ARROWS.children[2].scale)
+					.to({ x: 1, y: 1, z: sign }, 1000)
+					.easing(TWEEN.Easing.Cubic.Out)
+					.start()
+			} else if (line === 1) {
+				// console.log('mag lines appear small', sign)
+				new TWEEN.Tween(ARROWS.children[2].scale)
+					.to({ x: 0, y: 0, z: sign  }, 10000)
+					.easing(TWEEN.Easing.Cubic.Out)
+					.start()
+				new TWEEN.Tween(ARROWS.children[1].scale)
+					.to({ x: 0, y:0, z: sign  }, 10000)
+					.easing(TWEEN.Easing.Cubic.Out)
+					.start()
+				new TWEEN.Tween(ARROWS.children[0].scale)
+					.to({ x: 0, y: 0, z: sign  }, 10000)
+					.easing(TWEEN.Easing.Cubic.Out)
+					.start()
+
+			}
+		}
+
+		function createWires() {
+
+			let wire1 = makeWire(-500, 0, 80, -500, 0, 500, 0xb87333)
+			let wire2 = makeWire(-500, 0, -30, -500, 0, -500, 0xb87333)
+			scene.add(wire1, wire2)
+			let wire3 = makeWire(-300, 0, 500, -500, 0, 500, 0xb87333)
+			let wire4 = makeWire(-250, 0, -500, -500, 0, -500, 0xb87333)
+			scene.add(wire4, wire3)
+			let wire5 = makeWire(-250, 0, 400, -250, 0, 50, 0xb87333)
+			let wire6 = makeWire(-250, 0, -500, -250, 0, -50, 0xb87333)
+			scene.add(wire5, wire6)
+			flip = new THREE.Mesh(new THREE.BoxGeometry(10, 120, 10).translate(0, 60, -10), new THREE.MeshPhongMaterial({ color: 'black' }))
+			flip.rotation.x = 1.57;
+			flip.position.set(-250, -10, 400)
+			scene.add(flip)
+			let box = makeFlip()
+			box.position.set(-250, -10, 400)
+			scene.add(box)
+			let connector1 = makeConnector(90, 50, -160, -250, 0, -500, -500)
+			let connector2 = makeConnector(90, 50, 160, -200, 0, 500, 500)
+			scene.add(connector1, connector2)
+		}
+
+		function makeConnector(x1, y1, z1, x2, y2, z2, gap) {
+			const measureSpline = new THREE.CatmullRomCurve3([
+				new THREE.Vector3(x1, y1, z1),
+				new THREE.Vector3(x1 - 20, y1, z2),
+				new THREE.Vector3(x2, y2, gap)
+			]);
+
+			let tubeGeometry = new THREE.TubeGeometry(measureSpline, 25, 4, 4, false);
+			let connectorMaterial = new THREE.MeshPhongMaterial({
+				color: 0xb87333,
+				side: THREE.DoubleSide,
+			});
+			let mesh = new THREE.Mesh(tubeGeometry, connectorMaterial);
+
+			return mesh
+		}
+
+		export { makeConnector };
+
+		function addSpring() {
+			const curvePoints = [];
+
+			for (let t = 0; t < 145; t += 0.1) {
+
+				curvePoints.push(new THREE.Vector3(40 * Math.cos(t), 40 * Math.sin(t), 2.2 * t));
+
+			}
+			const curve = new THREE.CatmullRomCurve3(curvePoints);
+
+			let tubeGeometry = new THREE.TubeGeometry(curve, 500, 5, 15, false);
+			let material = new THREE.MeshPhongMaterial({
+				color: 0xff1133,
+				flatShading: false,
+				side: THREE.DoubleSide
+			})
+			material.color.convertSRGBToLinear();
+			let mesh = new THREE.Mesh(tubeGeometry, material);
+			return (mesh)
+		}
+
+		export { addSpring };
+
+		function createCell() {
+			let mesh = new THREE.Mesh(new THREE.CylinderGeometry(30, 30, 80), new THREE.MeshPhongMaterial({ color: 'brown' }))
+			let mesh1 = mesh.clone()
+			mesh1.material = new THREE.MeshPhongMaterial({ color: 'black' })
+			mesh1.scale.y = 0.5
+			mesh1.position.y = 60
+
+			mesh.add(mesh1)
+			mesh.rotation.z = 1.57
+			mesh.rotation.y = 1.57
+			return mesh
+
+		}
+		
+		function makeWire(x1, y1, z1, x2, y2, z2, col) {
+			const measureSpline = new THREE.CatmullRomCurve3([
+				new THREE.Vector3(x1, y1, z1),
+				new THREE.Vector3(x2, y2, z2)
+			]);
+
+			let tubeGeometry = new THREE.TubeGeometry(measureSpline, 25, 4, 4, false);
+			let connectorMaterial = new THREE.MeshPhongMaterial({
+				color: col,
+				side: THREE.DoubleSide,
+			});
+			let mesh = new THREE.Mesh(tubeGeometry, connectorMaterial);
+
+			return mesh
+		}
+
+		function makeFlip() {
+			let mesh1 = new THREE.Mesh(new THREE.BoxGeometry(120, 10, 120).translate(0, 0, 50), new THREE.MeshPhongMaterial({ color: 'brown' }))
+
+
+			// mesh1.add(mesh2);
+			return mesh1
+		}
+
+	</script>
+
+</body>
+
+</html>
