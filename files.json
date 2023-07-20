@@ -32,7 +32,8 @@
 		"Electricity_Three_Point_Charges_at_Triangle_Corners",		
 		"Electricity_Understanding_Capacitance",
 		"Electricity_Factors_Effecting_Capacitance",
-		"Electricity_Understanding_Inductance"
+		"Electricity_Understanding_Inductance",
+		"Electricity_LC_Oscillator"
 	],
 	"Magnetism": [
 		"Magnetism_History_of_Electromagnetism",
