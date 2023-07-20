@@ -182,9 +182,26 @@
 		"electric field",
 		"Electrostatic field"
 	],
+	"Electricity_Understanding_Capacitance": [
+		"capacitor",
+		"equation of a capacitance",
+		"charging of a capacitor",
+		"gauss law"
+	],
 	"Electricity_Factors_Effecting_Capacitance": [
 		"capacitor",
 		"charging of a capacitor"
+	],
+	"Electricity_Understanding_Inductance": [
+		"inductor",
+		"emf",
+		"induced volatge",
+		"self inductance"
+	],
+	"Electricity_LC_Oscillator": [
+		"inductor",
+		"LC Oscillator",
+		"capacitot"
 	],
 	"Thermodynamics_Introduction": [
 		"scuba diver",
