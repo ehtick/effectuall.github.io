@@ -23,7 +23,8 @@
 		"Mechanics_Spring_Force",
 		"Mechanics_Simple_Pendulum",
 		"Mechanics_Gravitational_Force",
-		"Mechanics_Gravitation_Law"
+		"Mechanics_Gravitation_Law",
+		"Mechanics_Angular_Momentum"
 	],
 	"Electricity": [
 		"Electricity_Coulomb's_Law",
