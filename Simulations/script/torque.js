@@ -49,7 +49,7 @@ class BasicWorldDemo {
     this.scene.add(this.plane, TORQUE, bolt, vectorF, vectorT);
     const light = new THREE.DirectionalLight(0xffffff, 2);
     const ambilight = new THREE.AmbientLight(0xffffff, .20);
-    light.position.set(0, 10, 5);
+    light.position.set(3,1, 0);
     this.scene.add(light, ambilight)
     this.scene.background = new THREE.Color(0xbfd1e5);
 
