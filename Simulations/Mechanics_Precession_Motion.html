@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Precession Motion</title>
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <link rel="shortcut icon" href="../files/favicon_white.ico" media="(prefers-color-scheme: dark)" />
+    <link rel="shortcut icon" href="../files/favicon.ico" media="(prefers-color-scheme: light)" />
+    <link rel="stylesheet" type="text/css" href="../css/style-page.css">
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-0JWHY29KD2"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+
+        gtag('config', 'G-0JWHY29KD2');
+    </script>
+    <meta name="google-site-verification" content="mz0TRB59UNqdTxhwzmXmGdgVPh8pB4YqjuUr-aWNGIY">
+
+</head>
+
+<body>
+    <div id="topmenu"></div>
+    <div id="sidemenu"> </div>
+
+
+    <div id="menu">
+        <!-- <a><label for="force">Force on the Wrench, F = </label><a id="forceDisplay"> 0 </a> N<br>
+            <input type="range" id="force" name="force" min="0" max="15" value="0" step="1">
+        </a><br> -->
+        <button id="pausebtn">PAUSE </button>
+        <button id="resetbtn">RESET</button>
+    </div>
+
+
+    <script type="module">
+
+        import * as THREE from '../build/three.module.js';
+        import { GLTFLoader } from '../jsm/loaders/GLTFLoader.js';
+        import { OrbitControls } from '../jsm/controls/OrbitControls.js';
+        import { CSS2DRenderer, CSS2DObject } from '../jsm/renderers/CSS2DRenderer.js';
+        import { GUI } from '../jsm/libs/lil-gui.module.min.js';
+        import { TWEEN } from '../jsm/libs/tween.module.min.js';
+
+        let camera, scene, renderer, stats, controls;
+        let SELECTED;
+        let top, sphere, t = 0, vectorR;
+        let mixer, mixer1, actions = {}, modelReady = false, play = true, reset=false;
+        let labelRenderer;
+        let planeMaterial;
+        let point, pivot, CM;
+        let dataarray = [], dataarray1 = [];
+        let label = new THREE.Group();
+        let focus = new THREE.Group();
+        let vectors = new THREE.Group();
+        let vLabel, lLabel, rLabel, RLabel, nLabel, mgLabel, tLabel;
+        let torqueMaterial;
+        let requestID;
+        let delta, clock = new THREE.Clock(), a = 2, T = 0, b = 0;
+        let params = {
+            force: 0
+        }
+
+        const buttonPause = document.getElementById('pausebtn');
+        const buttonReset = document.getElementById('resetbtn');
+        let displayForce = document.getElementById('forceDisplay');
+        // let inputForce = document.getElementById('force');
+        init()
+        animate()
+
+
+        //create spinning top
+        function spinningTop() {
+            let coneGroup = new THREE.Group()
+            let top = new THREE.Mesh(new THREE.SphereGeometry(2, 24, 12).translate(0, 4.1, 0), new THREE.MeshStandardMaterial({ color: new THREE.Color('red'), side: THREE.DoubleSide, roughness: 0.3, metalness: 0.5 }));
+            top.geometry.rotateX(1.57);
+            let nailMaterial = new THREE.MeshPhongMaterial({ color: new THREE.Color('brown') });
+            let nail = new THREE.Mesh(new THREE.ConeGeometry(0.2, 2, 30, 30).translate(0, -1, 0), nailMaterial);
+            nail.geometry.rotateX(-1.57);
+            let texture = new THREE.TextureLoader().load('./assets/img/topTexture.png');
+
+            let ring = new THREE.Mesh(new THREE.CylinderGeometry(2, 1.8, 0.8, 30).translate(0, 3.4, 0), new THREE.MeshPhongMaterial({ color: 0x000004, map: texture, transparent: true }));
+            ring.geometry.rotateX(1.57);
+
+            let bottom = new THREE.Mesh(new THREE.CylinderGeometry(1.8, 0.3, 2, 30).translate(0, 2, 0), new THREE.MeshPhongMaterial({ color: new THREE.Color('green') }));
+            bottom.geometry.rotateX(1.57);
+            ring.add(top)
+            bottom.add(ring)
+            nail.add(bottom)
+            coneGroup.add(nail)
+            return coneGroup
+        }
+
+        function init() {
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xbfd1e5);
+            createGrid();
+            planeMaterial = new THREE.MeshPhongMaterial({ color: 0xf9c834, transparent: true, opacity: 0.6 });
+            let Plane = new THREE.Mesh(new THREE.BoxBufferGeometry(), planeMaterial);
+            Plane.position.y = -0.5;
+            Plane.scale.set(12, 1, 12);
+            Plane.castShadow = true;
+            Plane.receiveShadow = true;
+            // scene.add(Plane);
+            scene.add(vectors, focus);
+            const axesHelper = new THREE.AxesHelper(15);
+            scene.add(axesHelper);
+            
+            const loader = new GLTFLoader();
+            loader
+                .load('./model/spinningTop.glb', function (gltf) {
+                    let model = gltf.scene;
+
+                    top = model.getObjectByName('top');
+                    vLabel = model.getObjectByName('vLabel');
+                    lLabel = model.getObjectByName('lLabel');
+                    rLabel = model.getObjectByName('rLabel');
+                    RLabel = model.getObjectByName('RLabel');
+                    mgLabel = model.getObjectByName('mgLabel');
+                    nLabel = model.getObjectByName('nLabel');
+                    tLabel = model.getObjectByName('tLabel');
+                    scene.add(model);
+                    torqueMaterial = top.material
+                    modelReady = true;
+                    const animations = gltf.animations;
+                    let fixedStates = ['topAction', 'torqueAction', 'pointAction', 'RAction', 'mgAction', 'vtrackAction', 'LtrackAction', 'rtrackAction'];
+                    mixer = new THREE.AnimationMixer(model);
+                    let clip = gltf.animations[1];
+
+                    let action = mixer.clipAction(clip);
+                    actions[clip.name] = action;
+                    for (let i = 0; i < gltf.animations.length; i++) {
+
+                        let clip = gltf.animations[i];
+                        let action = mixer.clipAction(clip);
+                        actions[clip.name] = action;
+                        if (fixedStates.indexOf(clip.name) >= 0) {
+                            action.clampWhenFinished = true;
+                            action.loop = THREE.LoopOnce;
+                        }
+
+                    }
+
+
+                    for (const key in actions) {
+                        actions[key].play()
+
+                    }
+
+                });
+            createLights();
+            createRenderer();
+            createCamera(2.5, 0.7, -2.5);
+            createControls(0, 0.7,0);
+            buttonLoad();
+
+            document.body.appendChild(renderer.domElement);
+            window.addEventListener('resize', onWindowResize);
+
+        }
+
+        function buttonLoad() {
+            buttonPause.addEventListener('click', function () {
+                console.log('pause Action')
+                pauseContinue()
+                play=!play
+            });
+            buttonReset.addEventListener('click', function () {
+            
+            reset=!reset
+            resetSpinning()
+        })
+        }
+
+        function resetSpinning() {
+            if (reset) {
+                buttonReset.innerHTML = 'RESTART'
+                for (const key in actions) {
+                        actions[key].stop()
+                        actions[key].reset()
+                    }
+            } else {
+                buttonReset.innerHTML = 'RESET'
+                for (const key in actions) {
+                        actions[key].play()
+                    }
+            }
+            
+        }
+        function pauseContinue() {
+            if (!play) {
+                for (const key in actions) {
+                    actions[key].paused = false;
+                    buttonPause.innerHTML = 'PAUSE'
+                    top.material = torqueMaterial;
+
+                }
+            } else {
+                for (const key in actions) {
+                    actions[key].paused = true;
+                    buttonPause.innerHTML = 'PLAY'
+                    // top.visible=false
+                    top.material = planeMaterial;
+                }
+            }
+
+        }
+
+        function dataArray(r, h, points) {
+            var array = [],
+                len = points,
+                i = 0, x, y, z, radian, radius = r, a = 0, c = 0.2, v = 1;
+
+            while (i < len) {
+                radian = Math.PI * 2 / len * i;
+                x = (v * a + c) * Math.cos(radian * a);
+                y = h;
+                z = (v * a + c) * Math.sin(radian * a);
+                array.push(new THREE.Vector3(x, y, z));
+                i += 1;
+                a += 0.01
+            }
+
+            return array
+        }
+
+        function allLook(group, target) {
+            var v = new THREE.Vector3();
+            target.getWorldPosition(v);
+            group.children.forEach(function (child) {
+                child.lookAt(v);
+            });
+        };
+
+        function createArrow(shift, len, col) {
+            let coneGroup = new THREE.Group();
+            let coneMaterial = new THREE.MeshStandardMaterial({
+                color: new THREE.Color(col)
+            });
+            let cone = new THREE.Mesh(new THREE.ConeGeometry(0.5, 2, 6).translate(0, len + shift, 0), coneMaterial);
+            cone.geometry.rotateX(1.57);
+            coneGroup.add(cone);
+            let tail = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, len).translate(0, 0, (len / 2) + shift), coneMaterial);
+            coneGroup.add(tail)
+
+            return coneGroup
+        }
+
+        function createCamera(x, y, z) {
+
+            let fov = 50;
+            const aspect = window.innerWidth / window.innerHeight;
+            const near = 0.01;
+            const far = 100;
+
+            camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+
+            camera.position.set(x, y, z);
+        }
+
+        function createControls(x, y, z) {
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enablePan = true;
+            controls.enableZoom = true;
+            controls.target.set(x, y, z);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.01;
+            controls.rotateSpeed = 0.1;
+            controls.update();
+            controls.addEventListener('change', render);
+        }
+
+        function createRenderer() {
+            // create the renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.alpha = true;
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.outputEncoding = THREE.sRGBEncoding;
+            document.body.appendChild(renderer.domElement);
+
+            labelRenderer = new CSS2DRenderer();
+            labelRenderer.setSize(window.innerWidth, window.innerHeight);
+            labelRenderer.domElement.style.position = 'absolute';
+            // labelRenderer.domElement.style.top = '-25px';
+            // labelRenderer.domElement.style.left = '-25px';
+            labelRenderer.domElement.style.pointerEvents = 'none';
+            document.body.appendChild(labelRenderer.domElement);
+
+        }
+
+        function createLights() {
+            let hemiLight = new THREE.AmbientLight(0xffffff, .20);
+            hemiLight.position.set(0, 20, 0);
+            scene.add(hemiLight);
+
+            let dirLight = new THREE.DirectionalLight(0xffffff, 1);
+            dirLight.position.set(-30, 50, -30);
+            dirLight.castShadow = true;
+            dirLight.shadow.camera.top = 70;
+            dirLight.shadow.camera.bottom = -70;
+            dirLight.shadow.camera.left = -70
+            dirLight.shadow.camera.right = 70;
+            dirLight.shadow.mapSize.width = 2048;
+            dirLight.shadow.mapSize.height = 2048;
+            scene.add(dirLight);
+
+            scene.add(new THREE.AmbientLight(0xffffff, .4));
+        }
+
+        function createGrid() {
+            const gridHelper = new THREE.GridHelper(50, 50);
+            scene.add(gridHelper);
+            // const planeHelper = gridHelper.clone();
+            // scene.add(planeHelper);
+            // planeHelper.rotation.set(1.57, 0, 0);
+        }
+
+        function onWindowResize() {
+
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function precessionAction() {
+            sphere.position.copy(dataarray[t]);
+            point.position.copy(dataarray1[t]);
+            // allLook(top, sphere);
+            allLook(vectorR, sphere);
+            t = t + 1;
+            if (t < dataarray.length) {
+                requestID = requestAnimationFrame(precessionAction)
+            } else {
+
+                cancelAnimationFrame(requestID)
+            }
+
+        }
+
+        function animate() {
+            // delta = clock.getDelta();
+            // T = T + 0.01
+            requestAnimationFrame(animate);
+            // top.rotation.z += a ;
+            // a = 0.15 * Math.exp(-0.15 * T)
+            delta = clock.getDelta();
+            if (modelReady) mixer.update(delta);
+            // if (modelReady) mixer1.update(delta)
+            controls.update()
+            render();
+
+        }
+
+        function render() {
+
+
+            renderer.render(scene, camera);
+            labelRenderer.render(scene, camera);
+        }
+
+        function guiControls() {
+            let gui = new GUI();
+            // gui.close()
+
+
+            gui.add(camera.position, 'x', -100, 100);
+            gui.add(camera.position, 'y', -100, 100);
+            gui.add(camera.position, 'z', -100, 100);
+            let controlFolder = gui.addFolder("Control");
+            controlFolder.add(controls.target, 'x', -100, 100);
+            controlFolder.add(controls.target, 'y', -100, 100);
+            controlFolder.add(controls.target, 'z', -100, 100);
+
+        }
+
+    </script>
+
+</body>
+
+</html>
