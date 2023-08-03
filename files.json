@@ -24,7 +24,9 @@
 		"Mechanics_Simple_Pendulum",
 		"Mechanics_Gravitational_Force",
 		"Mechanics_Gravitation_Law",
-		"Mechanics_Angular_Momentum"
+		"Mechanics_Angular_Momentum",
+		"Mechanics_Precession_Motion",
+		"Mechanics_Torque"
 	],
 	"Electricity": [
 		"Electricity_Coulomb's_Law",
