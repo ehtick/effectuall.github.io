@@ -45,7 +45,8 @@
 		"Magnetism_Magnetic_Effect_due_to_Current",
 		"Magnetism_Force_on_a_Current_Carrying_Conductor",
 		"Magnetism_Electromagnetic_Induction",
-		"Magnetism_Hall_Effect"
+		"Magnetism_Hall_Effect",
+		"Magnetism_Understanding_Lorentz_Force"
 	],
 	"Thermodynamics": [
 		"Thermodynamics_Introduction",
