@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title></title>
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <link rel="shortcut icon" href="../files/favicon_white.ico" media="(prefers-color-scheme: dark)" />
+    <link rel="shortcut icon" href="../files/favicon.ico" media="(prefers-color-scheme: light)" />
+    <link rel="stylesheet" type="text/css" href="../css/style-page.css">
+    <title>Force on an electron in a magnetic field-Lorentz's Force</title>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-0JWHY29KD2"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+
+        gtag('config', 'G-0JWHY29KD2');
+    </script>
+    <meta name="google-site-verification" content="mz0TRB59UNqdTxhwzmXmGdgVPh8pB4YqjuUr-aWNGIY">
+
+</head>
+
+<body>
+    <div style="color: beige;" id="topmenu">Understanding Lorentz Force</div>
+    <div id="sidemenu"> </div>
+
+
+    <div id="menu">
+      
+        <button id="move" style="display: none;">Rotate/Translate</button><br>
+        <button id="reset">RESET/HIDE</button>
+        <button id="change"> Change Polarity</button>
+    </div>
+
+
+    <script type="module">
+
+        import * as THREE from '../build/three.module.js';
+        import { OrbitControls } from '../jsm/controls/OrbitControls.js';
+        import { GLTFLoader } from '../jsm/loaders/GLTFLoader.js';
+        import { GUI } from '../jsm/libs/lil-gui.module.min.js';
+        import { TransformControls } from '../jsm/controls/TransformControls.js';
+        import { RGBELoader } from '../jsm/loaders/RGBELoader.js';
+
+        let camera, scene, renderer, stats, controls, transformControls;
+        let labelGeometry = new THREE.PlaneBufferGeometry(10, 10);
+        let electron, t = 0, b = 5, negMaterial, rightHand, LABELS = new THREE.Group();
+        let onLabel, onMaterial, onButton, MagLine = new THREE.Group();
+        let voltButton, requestID, voltMaterial;
+        let isChanged = false;
+        let power = false, isSwitched = false;
+        let points = [];
+        const objects = [];
+        let curves = new THREE.Group();
+        let LINES = new THREE.Group();
+        let magnet = new THREE.Group();
+        let raycaster = new THREE.Raycaster();
+        let pointer = new THREE.Vector2();
+        let SELECTED;
+        let redMaterial = new THREE.MeshPhongMaterial({ color: 'red' });
+        let blueMaterial = new THREE.MeshPhongMaterial({ color: 'blue' });
+        let nTexture = new THREE.TextureLoader().load('./assets/img/streak.png');
+        let light = new THREE.MeshPhongMaterial({ color: 'wheat' })
+        let greenMaterial = new THREE.MeshPhongMaterial({ color: 'green' });
+
+        let buttonChange = document.getElementById('change');
+        let buttonMove = document.getElementById('move');
+        let buttonReset = document.getElementById('reset');
+
+        let clock = new THREE.Clock();
+        const hdrEquirect = new RGBELoader()
+            .setPath('./assets/textures/')
+            .load('royal_esplanade_1k.hdr', function () {
+
+                hdrEquirect.mapping = THREE.EquirectangularReflectionMapping;
+
+                init();
+                render();
+
+            });
+
+
+        function init() {
+
+            scene = new THREE.Scene();
+
+            createLights();
+            createRenderer();
+            createCamera(60, 10, 70);
+            createControls(0, 0, 0);
+            // guiControls();
+            addElectron()
+
+            magneticField();
+            sphereClear();
+            electronChamber();
+            createModel();
+            scene.add(LINES)
+            document.addEventListener('click', onClick);
+            window.addEventListener('resize', onWindowResize);
+            animate()
+            LINES.visible = false;
+            electron.visible = false;
+
+            transformControls = new TransformControls(camera, renderer.domElement);
+
+            transformControls.addEventListener('change', function () {
+                // console.log('move')
+
+            });
+
+            transformControls.addEventListener('dragging-changed', function (event) {
+                controls.enabled = !event.value
+
+                // console.log('moved')
+
+            });
+
+            window.addEventListener( 'keydown', function ( event ) {
+                // console.log( event.keyCode )
+                switch ( event.keyCode ) {
+                        case 84: // W
+                            transformControls.setMode( 'translate' );
+							break;
+
+						case 82: // E
+                            transformControls.setMode( 'rotate' );
+							break;
+                }
+            })
+
+            buttonMove.addEventListener('click', function() {
+                let A = 'translate'
+                if (A == transformControls.mode) {
+                transformControls.mode =  'rotate'
+            } else {
+                transformControls.mode ='translate'
+                transformControls.visible =true;
+            }
+            });
+            buttonReset.addEventListener('click', function() {
+                
+                transformControls.visible = false
+                if (!isChanged) {
+                        
+                        MagLine.rotation.y = 0;
+                        // rightHand.rotation.x= -1.57;
+                        rightHand.rotation.set(-1.57,1.57,0)
+                        
+                    } else  {
+                        
+                        MagLine.rotation.y = 3.14;
+                        // rightHand.rotation.x = 1.57;
+                        rightHand.rotation.set(1.57,1.57,0)
+                    } 
+           
+            });
+        }
+
+        function sphereClear() {
+            const geometry = new THREE.SphereGeometry(20, 64, 32);
+
+            const texture = new THREE.CanvasTexture(generateTexture());
+            texture.magFilter = THREE.NearestFilter;
+            texture.wrapT = THREE.RepeatWrapping;
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.repeat.set(1, 0.5);
+
+            const material = new THREE.MeshPhysicalMaterial({
+                color: 0xffffff,
+                metalness: 0,
+                roughness: 0,
+                ior: 1.5,
+                alphaMap: texture,
+                envMap: hdrEquirect,
+                thickness: 1,
+                envMapIntensity: 1,
+                transmission: 1, // use material.transmission for glass materials
+                specularIntensity: 1,
+                specularColor: 0xffffff,
+                opacity: 1,
+                side: THREE.DoubleSide,
+                transparent: true
+            });
+
+            let mesh = new THREE.Mesh(geometry, material);
+            scene.add(mesh);
+        }
+
+        function electronChamber() {
+            //electron gun
+            let tubeGeometry = new THREE.CylinderGeometry(4, 4, 12, 16).rotateZ(1.57).translate(6, 0, 0);
+            let tubeMateiral = new THREE.MeshPhongMaterial({ color: 0xf12211 });
+            let tube = new THREE.Mesh(tubeGeometry, tubeMateiral);
+            scene.add(tube)
+            tube.position.x = 15;
+            const material = new THREE.MeshPhongMaterial({ color: 0x112211, side: THREE.DoubleSide });
+
+            const supplyGeometry = new THREE.BoxGeometry(65, 10, 20).translate(0, -30, 0)
+            const supplyMaterial = new THREE.MeshPhongMaterial({ color: 0x112211, side: THREE.DoubleSide });
+            // let label = makeText('Power Supply', supplyMaterial)
+            const supply = new THREE.Mesh(supplyGeometry, material)
+            scene.add(supply)
+
+            let displayMaterial = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, transparent: true });
+            let displayLabel = makeText(0, -27, 10.2, 26, displayMaterial, 'POWER SUPPLY', "rgba(0, 1, 0, 0.2)", "rgba(0, 0, 05, 1)");
+            let mMaterial = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, transparent: true });
+            let mLabel = makeText(-20, -34, 10.2, 26, mMaterial, 'MAGNET CURRENT', "rgba(0, 1, 0, 0.2)", "rgba(155, 155, 155, 1)");
+            let egunMaterial = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, transparent: true });
+            let egunLabel = makeText(28, 0, 5.2, 26, egunMaterial, 'Electron Gun', "rgba(1, 1, 1, 0.2)", "rgba(155, 155, 155, 1)");
+            let eMaterial = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, transparent: true });
+            let eLabel = makeText(22, -34, 10.2, 26, eMaterial, 'HIGH VOLTAGE', "rgba(0, 1, 0, 0.2)", "rgba(155, 155, 155, 1)");
+            //mag controls
+            onMaterial = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, transparent: true });
+            onLabel = makeText(-20, -31, 10.2, 28, onMaterial, 'OFF', "rgba(0, 1, 0, 0.2)", "rgba(250, 0, 05, 1)");
+            onButton = addSphere(2, 8, redMaterial)
+            scene.add(onButton)
+
+            onButton.position.set(-20, -28, 10)
+            voltButton = onButton.clone()
+            voltButton.material = redMaterial
+            scene.add(voltButton)
+            voltButton.position.set(20, -28, 10)
+            voltMaterial = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, transparent: true });
+            let voltLabel = makeText(20, -31, 10.2, 28, voltMaterial, 'OFF', "rgba(0, 1, 0, 0.2)", "rgba(250, 0, 05, 1)");
+
+            objects.push(onButton, voltButton)
+        }
+
+        function magneticField() {
+
+            let texture = new THREE.TextureLoader().load('./assets/img/rings.png');
+            const mat = new THREE.MeshStandardMaterial({ color: 0xf07707, side: THREE.DoubleSide, normalMap: texture });
+            mat.roughness = 0.2;
+            mat.metalness = 0.5;
+
+            const torus = new THREE.Mesh(new THREE.TorusGeometry(30, 5, 8, 50), mat)
+            torus.rotation.z = -1.72
+            scene.add(torus)
+
+            let Line = new THREE.Mesh(new THREE.BoxGeometry(.51, .51, 20), new THREE.MeshBasicMaterial({ color: "white" }))
+            let Arrow = new THREE.Mesh(new THREE.ConeGeometry(2, 5, 60).translate(0, 10, 0).rotateX(-1.57),
+                new THREE.MeshBasicMaterial({ color: "red" }));
+            Arrow.rotate
+            Line.add(Arrow)
+            scene.add(MagLine)
+            MagLine.add(Line)
+
+            MagLine.position.set(38, -3, 0)
+            MagLine.visible = false;
+
+            // let magMat = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, transparent: true });
+            // let magLabel = makeText(0, -3, -10, 26, magMat, 'B', "rgba(0, 1, 0, 0.2)", "rgba(155, 155, 155, 1)");
+            // let velMat = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, transparent: true });
+            // let velLabel = makeText(10, -3, 0, 26, velMat, 'V', "rgba(0, 1, 0, 0.2)", "rgba(155, 155, 155, 1)");
+            // let forceMat = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, transparent: true });
+            // let forceLabel = makeText(0, -3, 10.2, 26, forceMat, 'F', "rgba(0, 1, 0, 0.2)", "rgba(155, 155, 155, 1)");
+            // scene.add(LABELS)
+
+            // LABELS.add(magLabel, velLabel, forceLabel)
+        }
+
+        function createModel() {
+
+            const loader = new GLTFLoader();
+            loader
+                .setPath('./model/')
+                .load('righthandrule.glb', function (gltf) {
+                    rightHand = gltf.scene;
+                    rightHand.scale.set(30, 30, 30)
+                    rightHand.position.set(42, -5, 0)
+                    rightHand.rotation.set(-1.57,1.57,0)
+                    scene.add(rightHand);
+
+                    rightHand.visible = false;
+                    scene.add(transformControls);
+                    transformControls.attach(rightHand)
+                    transformControls.visible= false
+                });
+
+
+        }
+
+
+        function addElectron() {
+
+
+            negMaterial = new THREE.MeshPhongMaterial({
+                color: "blue",
+                transparent: false
+            });
+
+            electron = addSphere(0.5, 8, negMaterial)
+            // electron.position.set(30,0,0)
+            scene.add(electron);
+            let electron1 = electron.clone();
+            electron1.material = new THREE.MeshPhongMaterial({ color: 0xff2100 });
+            electron1.position.x = 15;
+            electron1.scale.set(1, 1, 2);
+            scene.add(electron1);
+            addPath()
+        }
+
+        function addSphere(r, N, mat) {
+            let material = mat
+
+            let geometry = new THREE.SphereGeometry(r, N);
+
+            let mesh = new THREE.Mesh(geometry, material);
+
+            return mesh
+        }
+
+        function onClick(event) {
+            // console.log(event); 
+            event.preventDefault();
+
+            pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+            pointer.y = - (event.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(pointer, camera);
+            let intersects = raycaster.intersectObjects(objects, true);
+            if (intersects.length > 0) {
+
+                SELECTED = intersects[0].object;
+                if (SELECTED == voltButton) {
+                    // console.log(SELECTED, 'volt')
+                    isSwitched = !isSwitched
+                    if (isSwitched) {
+                        SELECTED.material = greenMaterial;
+                        let onCanvas = makeLabelCanvas(18, 'ON', "rgba(0, 1, 0, 0.2)", "rgba(0, 250, 05, 1)");
+                        voltMaterial.map = new THREE.CanvasTexture(onCanvas);
+                        points = []
+                        t = 0;
+                        addPath()
+                        LINES.visible = true;
+                        electron.visible = true;
+                        electronAction()
+                    } else {
+                        SELECTED.material = redMaterial;
+                        let onCanvas = makeLabelCanvas(18, 'OFF', "rgba(0, 1, 0, 0.2)", "rgba(250, 0, 05, 1)");
+                        voltMaterial.map = new THREE.CanvasTexture(onCanvas);
+                        points = []
+                        t = 0;
+                        LINES.visible = false;
+                        electron.visible = false;
+                        cancelAnimationFrame(requestID)
+                    }
+                }
+                if (SELECTED == onButton) {
+                    power = !power
+                  
+                    if (isSwitched && power && !isChanged) {
+                        SELECTED.material = greenMaterial;
+                        let onCanvas = makeLabelCanvas(18, 'ON', "rgba(0, 1, 0, 0.2)", "rgba(0, 250, 05, 1)");
+                        onMaterial.map = new THREE.CanvasTexture(onCanvas);
+                        points = []
+                        t = 0;
+                        MagLine.rotation.y = 0;
+                        rightHand.rotation.x= -1.57
+                        anticlockwisePath(14, 0)
+                        rightHand.visible = true;
+                        transformControls.visible = true;
+                        buttonMove.style.display = 'block'
+                    } else if (isSwitched && power && isChanged) {
+                        SELECTED.material = greenMaterial;
+                        let onCanvas = makeLabelCanvas(18, 'ON', "rgba(0, 1, 0, 0.2)", "rgba(0, 250, 05, 1)");
+                        onMaterial.map = new THREE.CanvasTexture(onCanvas);
+                        points = []
+                        t = 0;
+                        MagLine.rotation.y = 3.14;
+                        rightHand.visible = true;
+                        rightHand.rotation.x = 1.57
+                        transformControls.visible = true;
+                        buttonMove.style.display = 'block'
+                    // transformControls.mode = 'rotate'
+                    // transformControls.showZ = false;
+                    // transformControls.showY = false;
+                        clockwisePath(14, 0)
+
+                    } else {
+                        SELECTED.material = redMaterial;
+                        let onCanvas = makeLabelCanvas(18, 'OFF', "rgba(0, 1, 0, 0.2)", "rgba(250, 0, 05, 1)");
+                        onMaterial.map = new THREE.CanvasTexture(onCanvas);
+
+                        points = []
+                        t = 0;
+                        addPath()
+                        MagLine.visible = false
+                        rightHand.visible = false;
+                        transformControls.visible = false;
+                        buttonMove.style.display = 'none'
+                    }
+                }
+
+
+
+            }
+        }
+
+        function addPath() {
+            while (LINES.children.length > 0) {
+                const A = LINES.children[0];
+                A.parent.remove(A);
+            }
+            let vertices = [];
+            // let points = [];
+            const point = new THREE.Vector3();
+            const color = new THREE.Color();
+            for (let i = 0; i < 33; i = i + 1.5) {
+                let v = new THREE.Vector3(15 - i, 0, 0)
+                points.push(v)
+
+            }
+            const geometry = new THREE.BufferGeometry();
+
+            let colors = [];
+
+            for (let i = 0; i < points.length; i++) {
+
+                const point = points[i];
+                vertices.push(point.x, point.y, point.z);
+                color.setHSL(0.1, 1, Math.max(0, (10 + points[i].x) / 20) * 0.5, THREE.SRGBColorSpace);
+                colors.push(color.r, color.g, color.b);
+
+            }
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+            const material = new THREE.LineBasicMaterial({ color: 0xffffff, vertexColors: true });
+
+            let line, p;
+            const scale = 0.7, d = 0;
+
+            const parameters = [
+                [material, scale * 1.5, [0, 0, 0], geometry],
+
+            ];
+
+            for (let i = 0; i < parameters.length; i++) {
+
+                p = parameters[i];
+                line = new THREE.Line(p[3], p[0]);
+                line.scale.x = line.scale.y = line.scale.z = p[1];
+                line.position.x = p[2][0];
+                line.position.y = p[2][1];
+                line.position.z = p[2][2];
+                scene.add(line);
+
+            }
+            LINES.add(line);
+        }
+
+        function pathPoints(a, b) {
+            MagLine.visible = true;
+            while (LINES.children.length > 0) {
+                const A = LINES.children[0];
+                A.parent.remove(A);
+            }
+            let r = a;
+            let theta = 2 * Math.PI / (36 * a);
+
+            let vertices = [];
+            // let points = [];
+            const point = new THREE.Vector3();
+            const color = new THREE.Color();
+            for (let i = (36 * a + 1); i > 0; i = i - 8) {
+                let v = new THREE.Vector3(r * Math.cos(i * theta), r * Math.sin(i * theta), 0).add(new THREE.Vector3(b, 0, 0))
+                points.push(v)
+
+            }
+
+            const geometry = new THREE.BufferGeometry();
+
+            let colors = [];
+
+            for (let i = 0; i < points.length; i++) {
+
+                const point = points[i];
+                vertices.push(point.x, point.y, point.z);
+                color.setHSL(0.5, 0.51, Math.max(0, (10 - points[i].x) / 20) * 0.3 - 0.2, THREE.SRGBColorSpace);
+                colors.push(color.r, color.g, color.b);
+
+            }
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+            const material = new THREE.LineBasicMaterial({ color: 0xffffff, vertexColors: true });
+
+            let line, p;
+            const scale = 0.7, d = 0;
+
+            const parameters = [
+                [material, scale * 1.5, [0, 0, 0], geometry],
+
+            ];
+
+            for (let i = 0; i < parameters.length; i++) {
+
+                p = parameters[i];
+                line = new THREE.Line(p[3], p[0]);
+                line.scale.x = line.scale.y = line.scale.z = p[1];
+                line.position.x = p[2][0];
+                line.position.y = p[2][1];
+                line.position.z = p[2][2];
+                scene.add(line);
+
+            }
+            LINES.add(line);
+        }
+
+        function anticlockwisePath(a, b) {
+            MagLine.visible = true;
+            while (LINES.children.length > 0) {
+                const A = LINES.children[0];
+                A.parent.remove(A);
+            }
+            let r = a;
+            let theta = 2 * Math.PI / (36 * a);
+
+            let vertices = [];
+            // let points = [];
+            const point = new THREE.Vector3();
+            const color = new THREE.Color();
+            for (let i = 0; i < (36 * a + 1); i = i + 8) {
+                let v = new THREE.Vector3(r * Math.cos(i * theta), r * Math.sin(i * theta), 0).add(new THREE.Vector3(b, 0, 0))
+                points.push(v)
+
+            }
+
+            const geometry = new THREE.BufferGeometry();
+
+            let colors = [];
+
+            for (let i = 0; i < points.length; i++) {
+
+                const point = points[i];
+                vertices.push(point.x, point.y, point.z);
+                color.setHSL(0.5, 0.51, Math.max(0, (10 - points[i].x) / 20) * 0.3 - 0.2, THREE.SRGBColorSpace);
+                colors.push(color.r, color.g, color.b);
+
+            }
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+            const material = new THREE.LineBasicMaterial({ color: 0xffffff, vertexColors: true });
+
+            let line, p;
+            const scale = 0.7, d = 0;
+
+            const parameters = [
+                [material, scale * 1.5, [0, 0, 0], geometry],
+
+            ];
+
+            for (let i = 0; i < parameters.length; i++) {
+
+                p = parameters[i];
+                line = new THREE.Line(p[3], p[0]);
+                line.scale.x = line.scale.y = line.scale.z = p[1];
+                line.position.x = p[2][0];
+                line.position.y = p[2][1];
+                line.position.z = p[2][2];
+                scene.add(line);
+
+            }
+            LINES.add(line);
+        }
+
+        function clockwisePath(a, b) {
+            MagLine.visible = true;
+            while (LINES.children.length > 0) {
+                const A = LINES.children[0];
+                A.parent.remove(A);
+            }
+            let r = a;
+            let theta = 2 * Math.PI / (36 * a);
+
+            let vertices = [];
+            // let points = [];
+            const point = new THREE.Vector3();
+            const color = new THREE.Color();
+
+            for (let i = (36 * a + 1); i > 0; i = i - 8) {
+                let v = new THREE.Vector3(r * Math.cos(i * theta), r * Math.sin(i * theta), 0).add(new THREE.Vector3(b, 0, 0))
+                points.push(v)
+
+            }
+
+            const geometry = new THREE.BufferGeometry();
+
+            let colors = [];
+
+            for (let i = 0; i < points.length; i++) {
+
+                const point = points[i];
+                vertices.push(point.x, point.y, point.z);
+                color.setHSL(0.5, 0.51, Math.max(0, (10 - points[i].x) / 20) * 0.3 - 0.2, THREE.SRGBColorSpace);
+                colors.push(color.r, color.g, color.b);
+
+            }
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+            const material = new THREE.LineBasicMaterial({ color: 0xffffff, vertexColors: true });
+
+            let line, p;
+            const scale = 0.7, d = 0;
+
+            const parameters = [
+                [material, scale * 1.5, [0, 0, 0], geometry],
+
+            ];
+
+            for (let i = 0; i < parameters.length; i++) {
+
+                p = parameters[i];
+                line = new THREE.Line(p[3], p[0]);
+                line.scale.x = line.scale.y = line.scale.z = p[1];
+                line.position.x = p[2][0];
+                line.position.y = p[2][1];
+                line.position.z = p[2][2];
+                scene.add(line);
+
+            }
+            LINES.add(line);
+        }
+
+
+        buttonChange.addEventListener('click', function () {
+            isChanged = !isChanged
+            onButton.material = redMaterial;
+            let onCanvas = makeLabelCanvas(18, 'OFF', "rgba(0, 1, 0, 0.2)", "rgba(250, 0, 05, 1)");
+            onMaterial.map = new THREE.CanvasTexture(onCanvas);
+            points = []
+            t = 0;
+            addPath()
+            console.log('change polarity', isChanged)
+            MagLine.visible = false
+        });
+
+
+        function createCamera(x, y, z) {
+
+            let fov = 55;
+            const aspect = window.innerWidth / window.innerHeight;
+            const near = 0.1;
+            const far = 1500;
+
+            camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+
+            camera.position.set(x, y, z);
+        }
+
+        function createControls(x, y, z) {
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enablePan = true;
+            controls.enableZoom = true;
+            controls.target.set(x, y, z);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.rotateSpeed = 0.1;
+            controls.update();
+            controls.addEventListener('change', render);
+        }
+
+        function createRenderer() {
+            // create the renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.alpha = true;
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.outputEncoding = THREE.sRGBEncoding;
+            document.body.appendChild(renderer.domElement);
+
+            // labelRenderer = new CSS2DRenderer();
+            // labelRenderer.setSize(window.innerWidth, window.innerHeight);
+            // labelRenderer.domElement.style.position = 'absolute';
+            // // labelRenderer.domElement.style.top = '-25px';
+            // labelRenderer.domElement.style.left = '-25px';
+            // labelRenderer.domElement.style.pointerEvents = 'none';
+            // document.body.appendChild(labelRenderer.domElement);
+
+        }
+
+        function createLights() {
+            let hemiLight = new THREE.AmbientLight(0xffffff, .20);
+            hemiLight.position.set(0, 20, 0);
+            scene.add(hemiLight);
+
+            let dirLight = new THREE.DirectionalLight(0xffffff, 1);
+            dirLight.position.set(0, 10, 0);
+            dirLight.castShadow = true;
+            dirLight.shadow.camera.top = 70;
+            dirLight.shadow.camera.bottom = -70;
+            dirLight.shadow.camera.left = -70
+            dirLight.shadow.camera.right = 70;
+            dirLight.shadow.mapSize.width = 2048;
+            dirLight.shadow.mapSize.height = 2048;
+            scene.add(dirLight);
+
+            scene.add(new THREE.AmbientLight(0xffffff, .4));
+        }
+
+        function createGrid() {
+            const gridHelper = new THREE.GridHelper(150, 50);
+            scene.add(gridHelper);
+            // const planeHelper = gridHelper.clone();
+            // scene.add(planeHelper);
+            // planeHelper.rotation.set(1.57, 0, 0);
+        }
+
+        function onWindowResize() {
+
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+
+            renderer.setSize(window.innerWidth, window.innerHeight);
+
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            controls.update()
+            render();
+
+        }
+
+
+        function electronAction() {
+            if (t < points.length) {
+
+                electron.position.copy(points[t])
+            } else {
+
+                t = 0
+            }
+            t = t + 1
+            requestID = requestAnimationFrame(electronAction);
+        }
+        
+        function render() {
+
+
+            renderer.render(scene, camera);
+
+        }
+
+        function guiControls() {
+            let gui = new GUI();
+            gui.close()
+
+
+            gui.add(camera.position, 'x', -100, 100);
+            gui.add(camera.position, 'y', -100, 100);
+            gui.add(camera.position, 'z', -100, 100);
+            let controlFolder = gui.addFolder("Control");
+            controlFolder.add(controls.target, 'x', -100, 100);
+            controlFolder.add(controls.target, 'y', -100, 100);
+            controlFolder.add(controls.target, 'z', -100, 100);
+
+        }
+
+        //make the  texture for labels
+        // function makeText(message, material) {
+
+        //     let fontface = "Arial";
+        //     let fontsize = 45;
+        //     let borderThickness = 4;
+        //     let borderColor = { r: 0, g: 0, b: 0, a: 1.0 };
+        //     let backgroundColor = { r: 0, g: 1, b: 0, a: 0.8 };
+
+        //     // let Alignment = THREE.Alignment.topLeft;
+
+        //     let canvas = document.createElement('canvas');
+        //     let context = canvas.getContext('2d');
+        //     context.font = "Bold " + fontsize + "px " + fontface;
+
+        //     material.map = new THREE.CanvasTexture(canvas);
+        //     // text color
+        //     context.fillStyle = "rgba(0, 0, 05, 1.0)";
+
+        //     context.fillText(message, borderThickness, fontsize + borderThickness);
+        // }
+
+        function makeLabelCanvas(size, name, backgdCol, color) {
+            const borderSize = 2;
+            const ctx = document.createElement('canvas').getContext('2d');
+            const font = `${size}px bold sans-serif`;
+            ctx.font = font;
+            // measure how long the name will be
+            const doubleBorderSize = borderSize * 2;
+            const width = ctx.measureText(name).width + doubleBorderSize;
+            const height = size + doubleBorderSize;
+            ctx.canvas.width = width;
+            ctx.canvas.height = height;
+
+            // need to set font again after resizing canvas
+            ctx.font = font;
+            ctx.textBaseline = 'top';
+
+            ctx.fillStyle = backgdCol;
+            ctx.fillRect(0, 0, width, height);
+            ctx.fillStyle = color;
+            ctx.fillText(name, borderSize, borderSize);
+
+            return ctx.canvas;
+        }
+
+        function makeText(x, y, z, size, material, name, backgdCol, color) {
+            const canvas = makeLabelCanvas(size, name, backgdCol, color);
+            material.map = new THREE.CanvasTexture(canvas);
+
+            const root = new THREE.Object3D();
+            root.position.set(x, y, z);
+
+            const label = new THREE.Mesh(labelGeometry, material);
+            root.add(label);
+            const labelBaseScale = 0.01;
+            label.scale.x = canvas.width * labelBaseScale;
+            label.scale.y = canvas.height * labelBaseScale;
+
+            scene.add(root);
+            return root;
+        }
+
+        function generateTexture() {
+
+            const canvas = document.createElement('canvas');
+            canvas.width = 2;
+            canvas.height = 2;
+
+            const context = canvas.getContext('2d');
+            context.fillStyle = 'white';
+            context.fillRect(0, 1, 2, 1);
+
+            return canvas;
+
+        }
+
+
+    </script>
+
+</body>
+
+</html>
