@@ -27,11 +27,11 @@
     <div id="sidemenu"> </div>
 
 
-    <div id="menu">
-      
-        <button id="move" style="display: none;">Rotate/Translate</button><br>
-        <button id="reset">RESET/HIDE</button>
+    <div id="menu" style="width: 100%;">
+<p style="color: beige;"> Press 'R', to rotate the Left Hand  and 'T', to change the Left Hand Position</p>
+ <button id="reset">RESET/HIDE</button>
         <button id="change"> Change Polarity</button>
+   
     </div>
 
 
@@ -46,9 +46,9 @@
 
         let camera, scene, renderer, stats, controls, transformControls;
         let labelGeometry = new THREE.PlaneBufferGeometry(10, 10);
-        let electron, t = 0, b = 5, negMaterial, rightHand, LABELS = new THREE.Group();
+        let electron, t = 0, b = 5, negMaterial, leftHand, LABELS = new THREE.Group();
         let onLabel, onMaterial, onButton, MagLine = new THREE.Group();
-        let voltButton, requestID, voltMaterial;
+        let voltButton, requestID, voltMaterial, force;
         let isChanged = false;
         let power = false, isSwitched = false;
         let points = [];
@@ -66,7 +66,6 @@
         let greenMaterial = new THREE.MeshPhongMaterial({ color: 'green' });
 
         let buttonChange = document.getElementById('change');
-        let buttonMove = document.getElementById('move');
         let buttonReset = document.getElementById('reset');
 
         let clock = new THREE.Clock();
@@ -90,13 +89,13 @@
             createRenderer();
             createCamera(60, 10, 70);
             createControls(0, 0, 0);
-            // guiControls();
+            createModel();
             addElectron()
 
             magneticField();
             sphereClear();
             electronChamber();
-            createModel();
+
             scene.add(LINES)
             document.addEventListener('click', onClick);
             window.addEventListener('resize', onWindowResize);
@@ -117,45 +116,43 @@
                 // console.log('moved')
 
             });
-
-            window.addEventListener( 'keydown', function ( event ) {
+            transformControls.attach(MagLine)
+            transformControls.visible = false
+            window.addEventListener('keydown', function (event) {
                 // console.log( event.keyCode )
-                switch ( event.keyCode ) {
-                        case 84: // W
-                            transformControls.setMode( 'translate' );
-							break;
-
-						case 82: // E
-                            transformControls.setMode( 'rotate' );
-							break;
+                switch (event.keyCode) {
+                    case 84: // T
+                        transformControls.setMode('translate');
+                        break;
+                    case 82: // R
+                        transformControls.setMode('rotate');
+                        break;
                 }
             })
+            buttonReset.addEventListener('click', function () {
 
-            buttonMove.addEventListener('click', function() {
-                let A = 'translate'
-                if (A == transformControls.mode) {
-                transformControls.mode =  'rotate'
-            } else {
-                transformControls.mode ='translate'
-                transformControls.visible =true;
-            }
-            });
-            buttonReset.addEventListener('click', function() {
-                
-                transformControls.visible = false
+                transformControls.visible = !transformControls.visible
                 if (!isChanged) {
-                        
-                        MagLine.rotation.y = 0;
-                        // rightHand.rotation.x= -1.57;
-                        rightHand.rotation.set(-1.57,1.57,0)
-                        
-                    } else  {
-                        
-                        MagLine.rotation.y = 3.14;
-                        // rightHand.rotation.x = 1.57;
-                        rightHand.rotation.set(1.57,1.57,0)
-                    } 
-           
+                    MagLine.rotation.set(0, 0, 0)
+                } else {
+                    MagLine.rotation.set(3.14, 0, 0)                }
+
+            });
+
+            buttonChange.addEventListener('click', function () {
+                isChanged = !isChanged
+                onButton.material = redMaterial;
+                let onCanvas = makeLabelCanvas(18, 'OFF', "rgba(0, 1, 0, 0.2)", "rgba(250, 0, 05, 1)");
+                onMaterial.map = new THREE.CanvasTexture(onCanvas);
+                points = []
+                t = 0;
+                addPath()
+                console.log('change polarity', isChanged)
+                if (isChanged) {
+                    MagLine.rotation.set(3.14, 0, 0)
+                } else {
+                    MagLine.rotation.set(0, 0, 0)
+                }
             });
         }
 
@@ -240,26 +237,27 @@
             torus.rotation.z = -1.72
             scene.add(torus)
 
-            let Line = new THREE.Mesh(new THREE.BoxGeometry(.51, .51, 20), new THREE.MeshBasicMaterial({ color: "white" }))
-            let Arrow = new THREE.Mesh(new THREE.ConeGeometry(2, 5, 60).translate(0, 10, 0).rotateX(-1.57),
-                new THREE.MeshBasicMaterial({ color: "red" }));
-            Arrow.rotate
-            Line.add(Arrow)
             scene.add(MagLine)
-            MagLine.add(Line)
+            MagLine.add(createArrow("green", "B", 0, 0))
+            MagLine.add(createArrow("blue", "v", 1.57, 0))
+            force = createArrow("red", "F", 0, 1.57)
+            MagLine.add(force)
+            MagLine.position.set(55, -10, 5)
 
-            MagLine.position.set(38, -3, 0)
-            MagLine.visible = false;
+        }
 
-            // let magMat = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, transparent: true });
-            // let magLabel = makeText(0, -3, -10, 26, magMat, 'B', "rgba(0, 1, 0, 0.2)", "rgba(155, 155, 155, 1)");
-            // let velMat = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, transparent: true });
-            // let velLabel = makeText(10, -3, 0, 26, velMat, 'V', "rgba(0, 1, 0, 0.2)", "rgba(155, 155, 155, 1)");
-            // let forceMat = new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, transparent: true });
-            // let forceLabel = makeText(0, -3, 10.2, 26, forceMat, 'F', "rgba(0, 1, 0, 0.2)", "rgba(155, 155, 155, 1)");
-            // scene.add(LABELS)
+        function createArrow(col, label, rot1, rot2) {
+            let mesh = new THREE.Group()
 
-            // LABELS.add(magLabel, velLabel, forceLabel)
+            let Line = new THREE.Mesh(new THREE.BoxGeometry(.51, .51, 20).translate(0, 0, -10), new THREE.MeshBasicMaterial({ color: col }))
+            Line.rotation.y = rot1;
+            Line.rotation.x = rot2;
+            let Arrow = new THREE.Mesh(new THREE.ConeGeometry(2, 5, 60).translate(0, 20, 0).rotateX(-1.57),
+                new THREE.MeshBasicMaterial({ color: col }));
+            Line.add(Arrow)
+            mesh.add(Line)
+
+            return mesh
         }
 
         function createModel() {
@@ -267,22 +265,19 @@
             const loader = new GLTFLoader();
             loader
                 .setPath('./model/')
-                .load('righthandrule.glb', function (gltf) {
-                    rightHand = gltf.scene;
-                    rightHand.scale.set(30, 30, 30)
-                    rightHand.position.set(42, -5, 0)
-                    rightHand.rotation.set(-1.57,1.57,0)
-                    scene.add(rightHand);
-
-                    rightHand.visible = false;
+                .load('leftHandrule.glb', function (gltf) {
+                    leftHand = gltf.scene;
+                    leftHand.scale.set(30, 30, 30)
+                    leftHand.position.set(6, -3, 0)
+                    leftHand.rotation.set(3.14, 0, 1.57)
+                    MagLine.add(leftHand);
                     scene.add(transformControls);
-                    transformControls.attach(rightHand)
-                    transformControls.visible= false
+
+
                 });
 
 
         }
-
 
         function addElectron() {
 
@@ -351,33 +346,21 @@
                 }
                 if (SELECTED == onButton) {
                     power = !power
-                  
+
                     if (isSwitched && power && !isChanged) {
                         SELECTED.material = greenMaterial;
                         let onCanvas = makeLabelCanvas(18, 'ON', "rgba(0, 1, 0, 0.2)", "rgba(0, 250, 05, 1)");
                         onMaterial.map = new THREE.CanvasTexture(onCanvas);
                         points = []
                         t = 0;
-                        MagLine.rotation.y = 0;
-                        rightHand.rotation.x= -1.57
+
                         anticlockwisePath(14, 0)
-                        rightHand.visible = true;
-                        transformControls.visible = true;
-                        buttonMove.style.display = 'block'
                     } else if (isSwitched && power && isChanged) {
                         SELECTED.material = greenMaterial;
                         let onCanvas = makeLabelCanvas(18, 'ON', "rgba(0, 1, 0, 0.2)", "rgba(0, 250, 05, 1)");
                         onMaterial.map = new THREE.CanvasTexture(onCanvas);
                         points = []
                         t = 0;
-                        MagLine.rotation.y = 3.14;
-                        rightHand.visible = true;
-                        rightHand.rotation.x = 1.57
-                        transformControls.visible = true;
-                        buttonMove.style.display = 'block'
-                    // transformControls.mode = 'rotate'
-                    // transformControls.showZ = false;
-                    // transformControls.showY = false;
                         clockwisePath(14, 0)
 
                     } else {
@@ -388,10 +371,6 @@
                         points = []
                         t = 0;
                         addPath()
-                        MagLine.visible = false
-                        rightHand.visible = false;
-                        transformControls.visible = false;
-                        buttonMove.style.display = 'none'
                     }
                 }
 
@@ -624,20 +603,6 @@
             LINES.add(line);
         }
 
-
-        buttonChange.addEventListener('click', function () {
-            isChanged = !isChanged
-            onButton.material = redMaterial;
-            let onCanvas = makeLabelCanvas(18, 'OFF', "rgba(0, 1, 0, 0.2)", "rgba(250, 0, 05, 1)");
-            onMaterial.map = new THREE.CanvasTexture(onCanvas);
-            points = []
-            t = 0;
-            addPath()
-            console.log('change polarity', isChanged)
-            MagLine.visible = false
-        });
-
-
         function createCamera(x, y, z) {
 
             let fov = 55;
@@ -700,14 +665,6 @@
             scene.add(new THREE.AmbientLight(0xffffff, .4));
         }
 
-        function createGrid() {
-            const gridHelper = new THREE.GridHelper(150, 50);
-            scene.add(gridHelper);
-            // const planeHelper = gridHelper.clone();
-            // scene.add(planeHelper);
-            // planeHelper.rotation.set(1.57, 0, 0);
-        }
-
         function onWindowResize() {
 
             camera.aspect = window.innerWidth / window.innerHeight;
@@ -725,7 +682,6 @@
 
         }
 
-
         function electronAction() {
             if (t < points.length) {
 
@@ -737,7 +693,7 @@
             t = t + 1
             requestID = requestAnimationFrame(electronAction);
         }
-        
+
         function render() {
 
 
