@@ -90,12 +90,14 @@
 	"Mechanics_Vector_Display": [
 		"vector",
 		"distance",
-		"position"
+		"position",
+		"kinematics"
 	],
 	"Mechanics_Vector_Algebra": [
 		"vector",
 		"distance",
-		"position"
+		"position",
+		"kinematics"
 	],
 	"Mechanics_Banking_on_a_Road": [
 		"circular motion",
@@ -104,7 +106,8 @@
 	],
 	"Mechanics_Periodic_Motion": [
 		"spring harmonic motion",
-		"time period"
+		"time period",
+		"circular motion"
 	],
 	"Mechanics_Spring_Force": [
 		"spring constant",
@@ -132,6 +135,10 @@
 		"gravity",
 		"law of Gravitation"
 	],
+	"Mechanics_Angular_Momentum": [],
+	"Mechanics_Precession_Motion": [],
+	"Mechanics_Torque": [],
+	"Mechanics_Conservation_of_Angular_Momentum": [],
 	"Magnetism_History_of_Electromagnetism": [
 		"oersted's law",
 		"effect on a magnetic needle",
