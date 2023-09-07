@@ -33,7 +33,7 @@
 		"Electricity_Coulomb's_Law",
 		"Electricity_The_Electric_Field",
 		"Electricity_Three_Point_Charges_in_a_Line",
-		"Electricity_Three_Point_Charges_at_Triangle_Corners",		
+		"Electricity_Three_Point_Charges_at_Triangle_Corners",
 		"Electricity_Understanding_Capacitance",
 		"Electricity_Factors_Effecting_Capacitance",
 		"Electricity_Understanding_Inductance",
@@ -46,7 +46,8 @@
 		"Magnetism_Force_on_a_Current_Carrying_Conductor",
 		"Magnetism_Electromagnetic_Induction",
 		"Magnetism_Hall_Effect",
-		"Magnetism_Understanding_Lorentz_Force"
+		"Magnetism_Understanding_Lorentz_Force",
+		"Magnetism_Motional_EMF"
 	],
 	"Thermodynamics": [
 		"Thermodynamics_Introduction",
@@ -56,7 +57,7 @@
 		"Thermodynamics_Torricellis_Law",
 		"Thermodynamics_Ideal_Gas_Equation",
 		"Thermodynamics_Kinetic_Theory_of_Gases",
-		"Thermodynamics_Hot_Air_Balloon"		
+		"Thermodynamics_Hot_Air_Balloon"
 	],
 	"Quantum": [
 		"Quantum_Photoelectric_Effect"
