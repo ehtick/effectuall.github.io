@@ -3,7 +3,7 @@
 
 <head>
 	<meta charset="utf-8">
-	<title>Force on a current carrying conductor in magnetic field</title>
+	<title>Motional emf in a conductor moving in magnetic field</title>
 	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 	<link rel="shortcut icon" href="../files/favicon_white.ico" media="(prefers-color-scheme: dark)" />
 	<link rel="shortcut icon" href="../files/favicon.ico" media="(prefers-color-scheme: light)" />
@@ -25,7 +25,7 @@
 
 	<div id="topmenu">
 		<div>
-			Force on a current carrying conductor in a magnetic field
+			Motional emf in a conductor moving in magnetic field
 		</div>
 	</div>
 	<div id="sidemenu">
@@ -320,11 +320,14 @@
 		let j = 0
 		function animate() {
 			requestAnimationFrame(animate);
+			const oldObjectPosition = new THREE.Vector3();
+			rodFront.getWorldPosition(oldObjectPosition);
 			controls.update();
 			let t = clock.getElapsedTime()
 			stats.update();
 			if (rodFront.position.z > 10) {
 				rodFront.position.z = -8
+				camera.position.set(14, 8, 8);
 			} else {
 				rodFront.position.z += params.vel
 				adjustLine(deltaL, new THREE.Vector3(1.6, railPosition, -8), new THREE.Vector3(1.6, railPosition, rodFront.position.z))
@@ -337,6 +340,13 @@
 				}
 			}
 
+			const newObjectPosition = new THREE.Vector3();
+			rodFront.getWorldPosition(newObjectPosition);
+			if (camera.fov === 35) {
+				const delta = newObjectPosition.clone().sub(oldObjectPosition).multiplyScalar(0.8);
+
+				camera.position.add(delta);
+			}
 
 			negBlock.scale.x += params.vel
 			posBlock.scale.x += params.vel
@@ -414,6 +424,7 @@
 			})
 			resetButton.addEventListener("click", function () {
 				magnetTop.visible = true
+				deltaL.visible = true
 				rod.visible = true
 				posBlock.visible = negBlock.visible = false
 				params.vel = 0.01
@@ -435,6 +446,7 @@
 			visualButton.addEventListener("click", function () {
 
 				rod.visible = false
+				deltaL.visible = false
 				// magnetTop.visible = false
 				// rodFront.position.z = 0
 
