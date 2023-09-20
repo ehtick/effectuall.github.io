@@ -171,7 +171,16 @@
 		"Hall sensor",
 		"hall measurement"
 	],
-	"Magnetism__Understanding_Force_on_a_Current_Carrying_Conductor": [
+	"Magnetism_Understanding_Lorentz_Force": [
+		"Lorentz force"
+	],
+	"Magnetism_Motional_EMF": [
+		"Lorentz force",
+		"Lenz Law",
+		"Induction",
+		"DC motor"
+	],
+	"Magnetism_Understanding_Force_on_a_Current_Carrying_Wire": [
 		"Lorentz force",
 		"Ampere's Law",
 		"DC motor"
