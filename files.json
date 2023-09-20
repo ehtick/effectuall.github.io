@@ -47,7 +47,8 @@
 		"Magnetism_Electromagnetic_Induction",
 		"Magnetism_Hall_Effect",
 		"Magnetism_Understanding_Lorentz_Force",
-		"Magnetism_Motional_EMF"
+		"Magnetism_Motional_EMF",
+		"Magnetism_Understanding_Force_on_a_Current_Carrying_Wire"
 	],
 	"Thermodynamics": [
 		"Thermodynamics_Introduction",
