@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title> Understanding Force on the charges in a conductor</title>
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <link rel="shortcut icon" href="../files/favicon_white.ico" media="(prefers-color-scheme: dark)" />
+    <link rel="shortcut icon" href="../files/favicon.ico" media="(prefers-color-scheme: light)" />
+    <link rel="stylesheet" type="text/css" href="../css/style-page.css">
+    <script async="" src="https://www.googletagmanager.com/gtag/js?id=G-7VWWT4ZKR6"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+
+        gtag('config', 'G-7VWWT4ZKR6');
+    </script>
+    <style>
+        input[type=data] {
+            border: 2px solid #049EF4;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .label {
+            font-weight: bold;
+            font-size: 22px;
+            margin-left: 0px;
+
+        }
+    </style>
+    <meta name="google-site-verification" content="mz0TRB59UNqdTxhwzmXmGdgVPh8pB4YqjuUr-aWNGIY">
+
+</head>
+
+<body>
+
+    <div style="font-weight: normal;  text-decoration-line: none; padding-bottom: 2px;" id="topmenu">
+        <div>
+            Understanding Force on the charges in a conductor
+
+        </div>
+
+    </div>
+
+
+
+    <div id="menu">
+        <a id="message-el"></a><br>
+        <a><label for="volt">Applied Volatge </label><a id="voltDisplay"> 0 </a> V<br>
+            <input type="range" id="volt" name="volt" min="-1" max="1" value="0" step="1">
+        </a><br>
+        <select id="magField">
+            <option value="0">Select Field 'B' direction:</option>
+            <option value="1">OUT (&CircleTimes;)</option>
+            <option value="2">IN (&CircleDot;)</option>
+        </select>
+
+        <!-- <button id="reset">RESET</button>
+        <button id="volt-el">VOLTAGE +</button> -->
+        <button id="motorSims" onClick="motorSims()">Conductor in Magnetic Field</button>
+    </div>
+
+
+    <script>
+
+        function motorSims() {
+
+            window.open("./Magnetism_Understanding_Force_on_a_Current_Carrying_Wire.html", "_self")
+        }
+    </script>
+    <script type="module">
+        import * as THREE from '../build/three.module.js';
+        import { GLTFLoader } from '../jsm/loaders/GLTFLoader.js';
+        import { OrbitControls } from '../jsm/controls/OrbitControls.js';
+        import { TransformControls } from '../jsm/controls/TransformControls.js';
+        import Stats from '../jsm/libs/stats.module.js';
+        import { GUI } from '../jsm/libs/lil-gui.module.min.js';
+        import { CSS2DRenderer, CSS2DObject } from '../jsm/renderers/CSS2DRenderer.js';
+
+        let camera, aspect, fov, stats, clock, gui;
+        let scene, renderer, controls, container, labelRenderer, transformControls;
+        let box, leftHand, MagLine = new THREE.Group(), currentI;
+        let vel = new THREE.Vector3(0, 0, 0);
+        const spheres = [], VELOCITY = [];
+        let requestID;
+        let voltlabelleft, voltlabelright, LABELS = new THREE.Group();
+        let params = {
+            A: Math.floor(Math.random() * (21 - 1) + 1),
+            V: 0
+        }
+
+        const modelPath = './model/';
+        const elements = {
+            '1': 'lefthandrule.glb'
+        };
+
+
+        let messageEl = document.getElementById("message-el");
+        let inputVolt = document.getElementById("volt");
+
+        let displayVolt = document.getElementById("voltDisplay");
+        let magField = document.getElementById("magField");
+        let magDir = document.getElementById("magDir");
+
+        init()
+        animate()
+
+        function createModel() {
+            const loader = new GLTFLoader();
+            loader
+                .setPath(modelPath)
+                .load(elements['1'], function (gltf) {
+                    leftHand = gltf.scene;
+                    MagLine.add(leftHand);
+                    leftHand.scale.set(15, 15, 15)
+                    // MagLine.rotation.set(-1.57, 0, 1.57)
+                    MagLine.position.set(18, 0, 75)
+                    scene.add(transformControls);
+                });
+        }
+
+        function init() {
+            //scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xbfd1e5);
+            createCamera(0, 0, 50);
+            createRenderer();
+            createControls(0, 0, 0);
+            createLights();
+
+            // guiControls();
+            // addAxes(new THREE.Vector3(0, 0, 0));
+
+            let geometry = new THREE.BoxGeometry(20.8, 20.8, 20.8);
+            const material = new THREE.MeshPhongMaterial(
+                {
+                    color: 'green',
+                    transparent: true,
+                    opacity: 0.25,
+                    side: THREE.FrontSide
+                })
+            box = new THREE.Mesh(geometry, material);
+            scene.add(box);
+
+            //the extended wire
+            let wire1 = new THREE.Mesh(new THREE.BoxGeometry(20.8, 300, 20.8).translate(0, 150 + 10.4, 0),
+                new THREE.MeshPhongMaterial({ color: 'orange' }));
+            let wire2 = wire1.clone()
+            wire2.scale.set(1, -1, 1)
+            scene.add(wire1, wire2)
+            addElectrons(50);
+            addAtoms()
+            randMovement()
+            buttonAction()
+            createLabels()
+            createModel()
+
+            scene.add(LABELS, MagLine)
+            //current Visual
+            currentI = createArrow('black', 'I', 0, 1.57)
+            currentI.position.set(15, 0, 75)
+            scene.add(currentI)
+
+
+
+            MagLine.add(createArrow("green", "B", 0, 3.14))
+            MagLine.add(createArrow("blue", "V", 0, 1.57))
+            MagLine.add(createArrow("red", "F", 1.57, 0))
+
+            transformControls = new TransformControls(camera, renderer.domElement);
+
+            transformControls.addEventListener('change', function () {
+                // console.log('move')
+            });
+
+            transformControls.addEventListener('dragging-changed', function (event) {
+                controls.enabled = !event.value
+                // console.log('moved')
+            });
+
+            transformControls.attach(MagLine)
+
+            transformControls.visible = false
+
+            document.body.appendChild(renderer.domElement);
+
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        function createArrow(col, label, rot1, rot2) {
+            let mesh = new THREE.Group()
+
+            let Line = new THREE.Mesh(new THREE.BoxGeometry(.2, .2, 14).translate(0, 0, -7), new THREE.MeshBasicMaterial({ color: col }))
+            Line.rotation.y = rot1;
+            Line.rotation.x = rot2;
+            let Arrow = new THREE.Mesh(new THREE.ConeGeometry(0.5, 1, 60).translate(0, 14, 0).rotateX(-1.57),
+                new THREE.MeshBasicMaterial({ color: col }));
+            Line.add(Arrow)
+            mesh.add(Line)
+
+            let text = document.createElement('div');
+            text.className = 'label';
+            text.innerHTML = label;
+
+            let labelName = new CSS2DObject(text);
+            labelName.position.z = -5
+            Line.add(labelName)
+            // LABELS.add(labelName)
+            return mesh
+        }
+
+        function createLabels() {
+            voltlabelleft = document.createElement('div');
+            voltlabelleft.className = 'label';
+            voltlabelleft.innerHTML = ' ';
+
+            let volt1 = new CSS2DObject(voltlabelleft);
+            volt1.position.set(0, 12, 10);
+            LABELS.add(volt1)
+
+            voltlabelright = document.createElement('div');
+            voltlabelright.className = 'label';
+            voltlabelright.innerHTML = ' ';
+
+            let volt2 = new CSS2DObject(voltlabelright);
+            volt2.position.set(0, -12, 10);
+            LABELS.add(volt2)
+        }
+
+        function guiControls() {
+            gui = new GUI();
+            // gui.close()
+            // camera control adjust
+            // console.log(camera.position)
+            let controlFolder = gui.addFolder("Control");
+            controlFolder.add(controls.target, 'x', -100, 100);
+            controlFolder.add(controls.target, 'y', -100, 100);
+            controlFolder.add(controls.target, 'z', -100, 100);
+            // // let cameraFolder = gui.addFolder("Camera");
+            gui.add(camera.position, 'x', -100, 100);
+            gui.add(camera.position, 'y', -100, 100);
+            gui.add(camera.position, 'z', -100, 100);
+
+
+        }
+
+        function createCamera(x, y, z) {
+
+            fov = 55;
+            const aspect = window.innerWidth / window.innerHeight;
+            const near = 0.5;
+            const far = 1500;
+
+            camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+
+            camera.position.set(x, y, z);
+        }
+
+        function createControls(x, y, z) {
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enablePan = true;
+            controls.enableZoom = true;
+            controls.target.set(x, y, z);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.rotateSpeed = 0.1;
+            controls.maxDistance = 70;
+            controls.minDistance = 1;
+            controls.update();
+            controls.addEventListener('change', render);
+        }
+
+        function createRenderer() {
+            // create the renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.alpha = true;
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.outputEncoding = THREE.sRGBEncoding;
+            document.body.appendChild(renderer.domElement);
+
+            labelRenderer = new CSS2DRenderer();
+            labelRenderer.setSize(window.innerWidth, window.innerHeight);
+            labelRenderer.domElement.style.position = 'absolute';
+            labelRenderer.domElement.style.top = '0px';
+            labelRenderer.domElement.style.pointerEvents = 'none';
+            document.body.appendChild(labelRenderer.domElement);
+        }
+
+        function createLights() {
+            let hemiLight = new THREE.AmbientLight(0xffffff, .20);
+            hemiLight.position.set(0, 20, 0);
+            scene.add(hemiLight);
+
+            let dirLight = new THREE.DirectionalLight(0xffffff, 1);
+            dirLight.position.set(-30, 50, -30);
+            dirLight.castShadow = true;
+            dirLight.shadow.camera.top = 70;
+            dirLight.shadow.camera.bottom = -70;
+            dirLight.shadow.camera.left = -70
+            dirLight.shadow.camera.right = 70;
+            dirLight.shadow.mapSize.width = 2048;
+            dirLight.shadow.mapSize.height = 2048;
+            scene.add(dirLight);
+
+            scene.add(new THREE.AmbientLight(0xffffff, .4));
+        }
+
+        function onWindowResize() {
+
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function addLabels(name, col, x, y) {
+
+            let text = document.createElement('div');
+            text.className = 'label';
+            text.innerHTML = name;
+            text.style.color = col;
+
+            let label = new CSS2DObject(text);
+            label.position.x = x;
+            label.position.y = y;
+
+            return label
+        }
+
+        function render() {
+
+            renderer.render(scene, camera);
+            labelRenderer.render(scene, camera);
+
+        }
+
+        function addAxes(pos) {
+            let axes = new THREE.Group();
+            const axesHelper = new THREE.AxesHelper(20);
+            axes.add(axesHelper);
+            const axesHelper1 = new THREE.AxesHelper(-20);
+            axes.add(axesHelper1);
+            axes.position.copy(pos)
+            scene.add(axes)
+        }
+
+        function addElectrons(N) {
+            const geometry = new THREE.SphereGeometry(0.1, 32, 16);
+            const material = new THREE.MeshPhongMaterial({ color: 'blue' });
+
+            for (let i = 0; i < N; i++) {
+
+                const mesh = new THREE.Mesh(geometry, material);
+
+                mesh.position.x = Math.ceil(Math.random() * 5) * (Math.round(Math.random()) ? 1 : -1)//Math.random() * 10 - 5;
+                mesh.position.y = Math.ceil(Math.random() * 5) * (Math.round(Math.random()) ? 1 : -1)//Math.random() * 10 - 5;
+                mesh.position.z = Math.ceil(Math.random() * 5) * (Math.round(Math.random()) ? 1 : -1)//Math.random() * 10 - 5;
+                mesh.rotation.x = Math.random() * -1.57;
+                mesh.rotation.y = Math.random() * 1.57;
+                mesh.rotation.z = Math.random() * 1.57;
+                mesh.scale.x = mesh.scale.y = mesh.scale.z = 3;
+
+                scene.add(mesh);
+                let mag = Math.random() < 0.5 ? -1 : 1;
+                let vel = new THREE.Vector3(mag * (Math.random() * 0.04), mag * (Math.random() * 0.04), mag * (Math.random() * 0.04));
+                VELOCITY.push(vel);
+                spheres.push(mesh);
+
+            }
+        }
+
+        function addAtoms() {
+            const geometry = new THREE.SphereGeometry(1, 32, 16);
+            const material = new THREE.MeshPhongMaterial({
+                color: 'red',
+                transparent: true,
+                opacity: 0.45,
+                side: THREE.DoubleSide,
+                depthTest: false
+            });
+            const mesh = new THREE.Mesh(geometry, material);
+            let LATTICE = new THREE.Group()
+            for (let i = -8; i < 9; i = i + 4) {
+
+
+                for (let j = -8; j < 9; j = j + 4) {
+
+                    for (let k = -8; k < 9; k = k + 4) {
+                        let A = mesh.clone()
+                        // console.log(i, j, k)
+                        A.position.set(i, j, k)
+                        LATTICE.add(A);
+                    }
+                }
+
+
+            }
+
+            scene.add(LATTICE)
+        }
+
+        function animate() {
+
+            requestAnimationFrame(animate);
+            // const timer = t * Date.now();
+
+            camera.lookAt(scene.position);
+
+
+            controls.update();
+            render();
+
+        }
+
+        function randMovement() {
+            for (let i = 0; i < spheres.length; i++) {
+
+                const sphere = spheres[i];
+
+                //check bounds invert direction 
+                if (sphere.position.x <= -10 || sphere.position.x >= 10) {
+                    VELOCITY[i].x = VELOCITY[i].x * -1;
+                    sphere.position.add(VELOCITY[i]);
+                } else if (sphere.position.y <= -10 || sphere.position.y >= 10) {
+                    VELOCITY[i].y = VELOCITY[i].y * -1;
+                    sphere.position.add(VELOCITY[i]);
+                } else if (sphere.position.z <= -10 || sphere.position.z >= 10) {
+                    VELOCITY[i].z = VELOCITY[i].z * -1;
+                    sphere.position.add(VELOCITY[i]);
+
+                } else if (sphere.position.x < -10.1 || sphere.position.x > 10.1 || sphere.position.y < -10.1 || sphere.position.y > 10.1 || sphere.position.z < -10.1 || sphere.position.z > 10.1) {
+
+                    sphere.position.set(0, 0, 0);
+
+                } else {
+                    // console.log(Math.floor(Math.random() * (21 - 1)) + 1)
+                    sphere.position.add(VELOCITY[i]);
+                }
+
+
+            }
+
+            requestID = requestAnimationFrame(randMovement)
+        }
+
+        function buttonAction() {
+
+            magField.addEventListener("click", function (event) {
+                if (params.V < 0) {
+                    console.log(magField.value, params.V)
+                    if (magField.value === '1') {
+                        console.log(magField.value, "1")
+                        controls.target.set(-9, 0, 0)
+                        MagLine.position.set(-30, 0, -5)
+                        MagLine.rotation.set(0, 0, 3.14)
+                    } else if (magField.value === '2') {
+                        console.log(magField.value, "2")
+                        controls.target.set(9, 0, 0)
+                        MagLine.position.set(30, 0, -5)
+                        MagLine.rotation.set(0, 3.14, 3.14)
+                    }
+                }
+
+
+                if (params.V > 0) {
+                    console.log(magField.value)
+                    if (magField.value === '1') {
+                        console.log(magField.value, "1")
+                        controls.target.set(9, 0, 0)
+                        MagLine.position.set(28, 0, -5)
+                        MagLine.rotation.set(0, 0, 0)
+                    } else if (magField.value === '2') {
+                        console.log(magField.value, "2")
+                        controls.target.set(-9, 0, 0)
+                        MagLine.position.set(-35, 0, -5)
+                        MagLine.rotation.set(0, 3.14, 0)
+                    }
+
+                }
+
+            })
+
+            inputVolt.addEventListener("click", function (event) {
+
+                cancelAnimationFrame(requestID)
+                magField.value = 0
+                let A = Number(inputVolt.value)
+                currentI.scale.set(1, -1 * A, 1)
+                currentI.position.set(15, 0, 0)
+                MagLine.position.set(-28, 0, 75)
+                controls.target.set(0, 0, 0)
+                displayVolt.innerHTML = A * 2.5
+                params.V = A / 5
+                messageEl.innerHTML = "I = neAv<sub>d</sub>"
+                if (params.V === 0) {
+                    params.A = Math.floor(Math.random() * (21 - 1) + 1)
+                    voltlabelleft.innerHTML = ' ';
+                    voltlabelright.innerHTML = ' ';
+
+                    for (let i = 0; i < spheres.length; i++) {
+                        const sphere = spheres[i];
+                        sphere.position.y = Math.floor(Math.random() * (8) + 1);
+                    }
+                    randMovement()
+                } else {
+                    directedMovement()
+                }
+            })
+        }
+
+        function directedMovement() {
+            for (let i = 0; i < spheres.length; i++) {
+                const sphere = spheres[i];
+                let vVector = new THREE.Vector3(0, params.V, 0)
+
+                //check bounds invert direction 
+                if (params.V < 0 && sphere.position.y < -10.1) {
+                    voltlabelleft.innerHTML = ' - ';
+                    voltlabelright.innerHTML = ' + ';
+
+                    sphere.position.y = 10.1;
+                } else if (sphere.position.x <= -10 || sphere.position.x >= 10) {
+                    VELOCITY[i].y = VELOCITY[i].y * -1;
+                    sphere.position.add(VELOCITY[i]);
+                } else if (sphere.position.z <= -10 || sphere.position.z >= 10) {
+                    VELOCITY[i].z = VELOCITY[i].z * -1;
+                    sphere.position.add(VELOCITY[i]);
+                } else if (params.V > 0 && sphere.position.y > 10.1) {
+                    voltlabelleft.innerHTML = ' + ';
+                    voltlabelright.innerHTML = ' - ';
+                    // controls.target.set(9, 0, 0)
+                    // MagLine.rotation.set(-1.57, 0, 1.57)
+                    sphere.position.y = -10.1;
+                } else if (sphere.position.x < -10.1 || sphere.position.x > 10.1 || sphere.position.z < -10.1 || sphere.position.z > 10.1) {
+
+                    sphere.position.set(0, 0, 0);
+
+                } else {
+                    // console.log(sphere.position)
+                    sphere.position.add(vVector);
+                }
+            }
+            requestID = requestAnimationFrame(directedMovement)
+        }
+
+
+
+
+    </script>
+</body>
+
+</html>

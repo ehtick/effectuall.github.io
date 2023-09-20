@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<title>Force on a current carrying wire</title>
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<link rel="shortcut icon" href="../files/favicon_white.ico" media="(prefers-color-scheme: dark)" />
+	<link rel="shortcut icon" href="../files/favicon.ico" media="(prefers-color-scheme: light)" />
+	<link rel="stylesheet" type="text/css" href="../css/style-page.css">
+	<!-- Google tag (gtag.js) -->
+	<script async src="https://www.googletagmanager.com/gtag/js?id=G-0JWHY29KD2"></script>
+	<script>
+		window.dataLayer = window.dataLayer || [];
+		function gtag() { dataLayer.push(arguments); }
+		gtag('js', new Date());
+
+		gtag('config', 'G-0JWHY29KD2');
+	</script>
+	<meta name="google-site-verification" content="mz0TRB59UNqdTxhwzmXmGdgVPh8pB4YqjuUr-aWNGIY">
+
+</head>
+
+<body>
+
+	<div id="topmenu">
+		<div>
+			Force on a current carrying wire
+		</div>
+	</div>
+	<div id="sidemenu">
+		<div style="visibility: hidden;" id="rule-el">
+			<a><strong>Fleming's Left Hand Rule</strong></a><br>
+			<a>Thu<a style="color: red;">m</a>b :- <a style="color: red;">M</a>echanical Force;</a><br>
+			<a><a style="color: blue;">F</a>ore Finger:- Magnetic <a style="color: blue;">F</a>ield;</a><br>
+			<a>Se<a style="color:rgb(0, 255, 0);">c</a>ond Finger:- Electric <a
+					style="color: rgb(0, 255, 0);">C</a>urrent;</a>
+		</div>
+	</div>
+	<div id="menu">
+
+		<a id="message-el"></a><br>
+		<a><label for="volt">Applied Volatge </label><a id="voltDisplay"> 0 </a> V<br>
+			<input type="range" id="volt" name="volt" min="-1" max="1" value="0" step="1">
+		</a><br>
+		<br>
+		<button id="motorSims" onClick="motorSims()">FORCE 3D VISUALISATION</button>
+		<!-- <button id="direction-el">MAGNETIC POLARITY</button> -->
+	</div>
+
+
+	<script>
+
+		function motorSims() {
+
+			window.open("./Magnetism_Close_Up_Force_on_a_Current_Carrying_Wire.html", "_self")
+		}
+	</script>
+
+	<script type="module">
+		import * as THREE from '../build/three.module.js';
+		import { GLTFLoader } from '../jsm/loaders/GLTFLoader.js';
+		import { OrbitControls } from '../jsm/controls/OrbitControls.js';
+		import Stats from '../jsm/libs/stats.module.js';
+		import { GUI } from '../jsm/libs/lil-gui.module.min.js';
+
+		let visual = false
+		let camera, aspect, fov, stats, clock, gui, delta;
+		let scene, renderer, controls, model, mixer1, container, arrow, modelReady1, wire;
+		let wireModel, mixer2, current, magnet, direction, mField, modelReady2;
+		// let leftHand, 
+		let magLine = new THREE.Group();
+		let requestID, box = new THREE.Group();
+		const spheres = [], VELOCITY = [], ELEMENTS = new THREE.Group();
+		let actions = {};
+		const modelPath = './model/';
+		const elements = {
+			'1': 'elements.glb',
+			'2': 'ForceonWire.glb',
+			'3': 'lefthandrule.glb',
+			'4': 'ForceonCoil.glb',
+			'5': 'magnet.glb'
+		};
+
+		let params = {
+			A: Math.floor(Math.random() * (21 - 1) + 1),
+			V: 0
+
+		}
+		//button and html elements
+		let message = "";
+		let messageEl = document.getElementById("message-el");
+		let conductorEl = document.getElementById("conductor-el");
+		let equationEl = document.getElementById("equations-el");
+		let ruleEl = document.getElementById("rule-el");
+		const buttonSlowEl = document.getElementById("slow-el");
+
+		let inputVolt = document.getElementById("volt");
+
+		let displayVolt = document.getElementById("voltDisplay");
+
+		const buttonFlip = document.getElementById('flip-el');
+		const buttonFlow = document.getElementById('flow-el');
+		const buttonDirection = document.getElementById('direction-el');
+		const buttonHand = document.getElementById('hand-el');
+
+		const motorSimsEl = document.getElementById('motorSims');
+
+		//scene
+		scene = new THREE.Scene();
+		scene.background = new THREE.Color(0xbfd1e5);
+
+		//camera
+		createCamera(50, 50, 40, 60);
+		stats = new Stats();
+		clock = new THREE.Clock();
+		document.body.appendChild(stats.dom);
+		scene.add(magLine, box, ELEMENTS)
+		//renderer
+		createRenderer();
+
+		//cameracontrols
+		createControls(-5, 7, 5);
+
+		//create light 
+		createLights();
+
+		const gridHelper = new THREE.GridHelper(100, 10);
+		scene.add(gridHelper);
+		document.body.appendChild(renderer.domElement);
+
+		window.addEventListener("resize", onWindowResize);
+
+		window.onload = function () {
+			createModel();
+			buttonAction()
+		}
+
+
+		// guiControls();
+
+
+
+		function createModel() {
+
+			const loader = new GLTFLoader();
+			//load powersupply model
+			loader
+				.setPath(modelPath)
+				.load(elements['1'], function (gltf) {
+					model = gltf.scene;
+					modelReady1 = true;
+					mixer1 = new THREE.AnimationMixer(model);
+					arrow = model.getObjectByName('arrow');
+					scene.add(model);
+					arrow.visible = false;
+
+					model.scale.set(20, 20, 20)
+					let fixedStates = ['polarity1', 'polarity', 'needleL'];
+					gltf.scene.traverse((child) => {
+						if (child.type == 'SkinnedMesh') {
+							child.frustumCulled = false;
+						}
+					})
+					for (let i = 0; i < gltf.animations.length; i++) {
+
+						let clip = gltf.animations[i];
+						let action = mixer1.clipAction(clip);
+						actions[clip.name] = action;
+
+						if (fixedStates.indexOf(clip.name) >= 0) {
+							action.clampWhenFinished = true;
+							action.loop = THREE.LoopOnce;
+							//console.log(i, clip.name, fixedStates.indexOf(clip.name) )
+						}
+					}
+
+				});
+
+			//load Alumininum rod model
+			loader
+				.setPath(modelPath)
+				.load(elements['2'], function (gltf) {
+					wireModel = gltf.scene;
+					current = wireModel.getObjectByName('current');
+					wire = wireModel.getObjectByName('wire');
+					modelReady2 = true;
+					mixer2 = new THREE.AnimationMixer(wireModel);
+					scene.add(wireModel);
+					wireModel.scale.set(20, 20, 20)
+					//buttonDirection.innerHTML = "FORCE DIRECTION"
+					let fixedStates = ['currentleft', 'currentleftR', 'currentright', 'currentrightR', 'right', 'left'];
+					gltf.scene.traverse((child) => {
+						if (child.type == 'SkinnedMesh') {
+							child.frustumCulled = false;
+						}
+					})
+
+					for (let i = 0; i < gltf.animations.length; i++) {
+
+						let clip = gltf.animations[i];
+						let action = mixer2.clipAction(clip);
+						actions[clip.name] = action;
+
+						if (fixedStates.indexOf(clip.name) >= 0) {
+							action.clampWhenFinished = true;
+							action.loop = THREE.LoopOnce;
+						}
+					}
+
+				});
+
+			//load Left Hand gesture
+			// loader
+			// 	.setPath(modelPath)
+			// 	.load(elements['3'], function (gltf) {
+			// 		leftHand = gltf.scene;
+			// 		magLine.add(leftHand)
+
+			// 		leftHand.rotation.set(0, 0, 0)
+
+			// 	});
+
+			//load magnet and the arrow indicator
+			loader
+				.setPath(modelPath)
+				.load(elements['5'], function (gltf) {
+					magnet = gltf.scene;
+					direction = magnet.getObjectByName('direction');
+					direction.scale.set(-1, 1, 1)
+					// direction.rotation.set(0, -1.57, -1.57)
+					direction.position.set(0, 0, 0)
+					mField = magnet.getObjectByName('MField');
+					scene.add(magnet);
+					magnet.scale.set(20, 20, 20)
+					magLine.add(direction)
+					magLine.position.set(0, 1, -3)
+					gltf.scene.traverse((child) => {
+						if (child.type == 'SkinnedMesh') {
+							child.frustumCulled = false;
+						}
+					})
+					// leftHand.scale.set(2, 2, 2)
+					// render();
+				});
+
+
+			animate()
+		}
+
+		function createCamera(view, x, y, z) {
+
+			fov = view;
+			const aspect = window.innerWidth / window.innerHeight;
+			const near = 0.1;
+			const far = 5000;
+
+			camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+
+			camera.position.set(x, y, z);
+		}
+
+		function createControls(x, y, z) {
+			controls = new OrbitControls(camera, renderer.domElement);
+			controls.enablePan = true;
+			controls.enableZoom = true;
+			controls.target.set(x, y, z);
+			controls.enableDamping = true;
+			controls.dampingFactor = 0.05;
+			controls.rotateSpeed = 0.1;
+			// controls.maxAzimuthAngle = 0.7;
+			// controls.minAzimuthAngle = -0.2;
+			controls.maxDistance = 200;
+			controls.minDistance = 60;
+			// controls.minPolarAngle = 1.5
+			// controls.maxPolarAngle = 2.0;
+			controls.update();
+			controls.addEventListener('change', render);
+		}
+
+		function createRenderer() {
+			// create the renderer
+			renderer = new THREE.WebGLRenderer({ antialias: true });
+			renderer.alpha = true;
+			renderer.setPixelRatio(window.devicePixelRatio);
+			renderer.setSize(window.innerWidth, window.innerHeight);
+			renderer.outputEncoding = THREE.sRGBEncoding;
+			document.body.appendChild(renderer.domElement);
+		}
+
+		function createLights() {
+			let hemiLight = new THREE.AmbientLight(0xffffff, .20);
+			hemiLight.position.set(0, 20, 0);
+			scene.add(hemiLight);
+
+			let dirLight = new THREE.DirectionalLight(0xffffff, 1);
+			dirLight.position.set(-30, 50, -30);
+			dirLight.castShadow = true;
+			dirLight.shadow.camera.top = 70;
+			dirLight.shadow.camera.bottom = -70;
+			dirLight.shadow.camera.left = -70
+			dirLight.shadow.camera.right = 70;
+			dirLight.shadow.mapSize.width = 2048;
+			dirLight.shadow.mapSize.height = 2048;
+			scene.add(dirLight);
+
+			scene.add(new THREE.AmbientLight(0xffffff, .4));
+		}
+
+		function onWindowResize() {
+
+			camera.aspect = window.innerWidth / window.innerHeight;
+			camera.updateProjectionMatrix();
+
+			renderer.setSize(window.innerWidth, window.innerHeight);
+			render();
+
+		}
+
+		function render() {
+
+			renderer.render(scene, camera);
+
+		}
+
+		function guiControls() {
+			gui = new GUI();
+
+			gui.add(controls.target, 'x', -100, 100);
+			gui.add(controls.target, 'y', -200, 200);
+			gui.add(controls.target, 'z', -100, 100);
+			// // let cameraFolder = gui.addFolder("Camera");
+			gui.add(camera.position, 'x', -100, 100);
+			gui.add(camera.position, 'y', -100, 100);
+			gui.add(camera.position, 'z', -100, 100);
+			render()
+		}
+
+		function animate() {
+
+			requestAnimationFrame(animate);
+			camera.lookAt(ELEMENTS.position);
+
+			delta = clock.getDelta();;
+			if (modelReady1) mixer1.update(delta);
+			if (modelReady2) mixer2.update(delta);
+			controls.update();
+			render();
+
+		}
+
+		function randMovement() {
+			console.log('random movement of the electrons')
+			for (let i = 0; i < spheres.length; i++) {
+
+				const sphere = spheres[i];
+
+				//check bounds invert direction 
+				if (sphere.position.x <= -10 || sphere.position.x >= 10) {
+					VELOCITY[i].x = VELOCITY[i].x * -1;
+					sphere.position.add(VELOCITY[i]);
+				} else if (sphere.position.y <= -10 || sphere.position.y >= 10) {
+					VELOCITY[i].y = VELOCITY[i].y * -1;
+					sphere.position.add(VELOCITY[i]);
+				} else if (sphere.position.z <= -10 || sphere.position.z >= 10) {
+					VELOCITY[i].z = VELOCITY[i].z * -1;
+					sphere.position.add(VELOCITY[i]);
+
+				} else if (sphere.position.x < -10 || sphere.position.x > 10 || sphere.position.y < -10 || sphere.position.y > 10 || sphere.position.z < -10 || sphere.position.z > 10) {
+
+					sphere.position.set(0, 0, 0);
+
+				} else {
+					// console.log(Math.floor(Math.random() * (21 - 1)) + 1)
+					sphere.position.add(VELOCITY[i]);
+				}
+
+
+			}
+
+			requestID = requestAnimationFrame(randMovement)
+		}
+
+		function buttonAction() {
+			// motorSimsEl.addEventListener("click", function (event) {
+			// 	console.log('zoom to the wire')
+			// 	visual = !visual
+			// 	resetAction()
+			// 	wire.visible = !wire.visible
+			// 	mField.visible = !mField.visible
+			// 	magnet.visible = !magnet.visible
+			// 	if (visual) {
+			// 		visualElement()
+			// 		camera.position.set(50, 100, 65)
+			// 		controls.target.set(-60, 130, 25);
+			// 		camera.fov = 5;
+			// 		camera.updateProjectionMatrix();
+			// 	} else {
+			// 		camera.position.set(500, 400, 650)
+			// 		controls.target.set(-50, 70, 50);
+			// 		camera.fov = 50;
+			// 		camera.updateProjectionMatrix();
+			// 	}
+			// 	render()
+			// })
+
+			inputVolt.addEventListener("click", function (event) {
+				let A = Number(inputVolt.value)
+				displayVolt.innerHTML = A * 2.5
+				params.V = A / 5
+				if (visual) {
+					electronAction()
+				} else {
+					electronAction()
+					wireAction()
+				}
+			})
+		}
+
+		function electronAction() {
+			cancelAnimationFrame(requestID)
+
+			// console.log(inputVolt.value)
+			// let A = Number(inputVolt.value)
+			// displayVolt.innerHTML = A * 2.5
+			// params.V = A / 5
+
+			if (params.V === 0) {
+				params.A = Math.floor(Math.random() * (21 - 1) + 1)
+				// voltlabelleft.innerHTML = ' ';
+				// voltlabelright.innerHTML = ' ';
+				for (let i = 0; i < spheres.length; i++) {
+					const sphere = spheres[i];
+					sphere.position.z = Math.floor(Math.random() * (8) + 1);
+				}
+				// MagLine.rotation.set(-1.57, 0, 0)
+				// MagLine.position.set(18, -4, 75)
+				randMovement()
+			} else {
+				directedMovement()
+				// MagLine.position.set(18, -4, 25)
+			}
+		}
+
+		function wireAction() {
+			if (params.V > 0) {
+				resetAction()
+				actions['polarity'].play()
+				actions['needleL'].setDuration(0.1).play()
+				current.visible = true;
+				setTimeout(function () {
+
+					actions['left'].setDuration(1).play();
+					actions['currentleft'].setDuration(1).play();
+
+				}, 1000);
+			} else if (params.V === 0) {
+				resetAction()
+
+			} else if (params.V < 0) {
+				resetAction()
+				actions['polarity1'].play()
+				setTimeout(function () {
+
+					actions['needleL'].setDuration(0.1).play()
+					setTimeout(function () {
+
+						actions['right'].setDuration(1).play();
+						actions['currentright'].setDuration(1).play();
+						current.visible = true;
+
+					}, 1000);
+
+				}, 1000);
+
+
+			}
+		}
+
+		function resetAction() {
+			actions['polarity'].stop().reset()
+			actions['polarity1'].stop().reset()
+			actions['needleL'].stop().reset()
+			actions['left'].stop().reset()
+			actions['currentleft'].stop().reset()
+			actions['right'].stop().reset()
+			actions['currentright'].stop().reset()
+			current.visible = false;
+		}
+
+		function directedMovement() {
+			for (let i = 0; i < spheres.length; i++) {
+				const sphere = spheres[i];
+				let vVector = new THREE.Vector3(0, 0, params.V)
+
+				//check bounds invert direction 
+				if (params.V > 0 && sphere.position.z > 11) {
+					// voltlabelleft.innerHTML = ' + ';
+					// voltlabelright.innerHTML = ' - ';
+					// MagLine.rotation.set(-1.57, 0, -1.57)
+					sphere.position.z = -11;
+				} else if (sphere.position.y <= -10 || sphere.position.y >= 10) {
+					VELOCITY[i].y = VELOCITY[i].y * -1;
+					sphere.position.add(VELOCITY[i]);
+				} else if (sphere.position.x <= -10 || sphere.position.x >= 10) {
+					VELOCITY[i].x = VELOCITY[i].x * -1;
+					sphere.position.add(VELOCITY[i]);
+				} else if (params.V < 0 && sphere.position.z < -11) {
+					// voltlabelleft.innerHTML = ' - ';
+					// voltlabelright.innerHTML = ' + ';
+					// MagLine.rotation.set(-1.57, 0, 1.57)
+					sphere.position.z = 11;
+				} else {
+					// console.log(sphere.position)
+					sphere.position.add(vVector);
+				}
+			}
+			requestID = requestAnimationFrame(directedMovement)
+		}
+
+		function addElectrons(N) {
+			const geometry = new THREE.SphereGeometry(0.4, 16, 8);
+			const material = new THREE.MeshPhongMaterial({ color: 'blue' });
+
+			for (let i = 0; i < N; i++) {
+
+				const mesh = new THREE.Mesh(geometry, material);
+
+				mesh.position.x = Math.random() * 10 - 5;
+				mesh.position.y = Math.random() * 10 - 5;
+				mesh.position.z = Math.random() * 10 - 5;
+				mesh.rotation.x = Math.random() * 1.57;
+				mesh.rotation.y = 0;
+				mesh.rotation.z = Math.random() * 1.57;
+				// mesh.scale.x = mesh.scale.y = mesh.scale.z = 3;
+
+				ELEMENTS.add(mesh);
+				let mag = Math.random() < 0.5 ? -1 : 1;
+				let vel = new THREE.Vector3(mag * (Math.random() * (0.06 - 0.02) + 0.02), mag * (Math.random() * (0.06 - 0.02) + 0.02), mag * (Math.random() * (0.06 - 0.02) + 0.02));
+				VELOCITY.push(vel);
+				spheres.push(mesh);
+
+			}
+
+		}
+
+		function addAtoms() {
+			const geometry = new THREE.SphereGeometry(1, 32, 16);
+			const material = new THREE.MeshPhongMaterial({
+				color: 'red',
+				transparent: true,
+				opacity: 0.45,
+				side: THREE.DoubleSide,
+				depthTest: false
+			});
+			const mesh = new THREE.Mesh(geometry, material);
+			let LATTICE = new THREE.Group()
+			for (let i = -8; i < 9; i = i + 4) {
+
+
+				for (let j = -8; j < 9; j = j + 4) {
+
+					for (let k = -8; k < 9; k = k + 4) {
+						let A = mesh.clone()
+						// console.log(i, j, k)
+						A.position.set(i, j, k)
+						LATTICE.add(A);
+					}
+				}
+
+
+			}
+
+			ELEMENTS.add(LATTICE)
+		}
+
+		function visualElement() {
+			let geometry = new THREE.BoxGeometry(20.8, 20.8, 20.8);
+			const material = new THREE.MeshPhongMaterial(
+				{
+					color: 'green',
+					transparent: true,
+					opacity: 0.25,
+					side: THREE.FrontSide
+				})
+			let wire = new THREE.Mesh(geometry, material);
+			scene.add(wire);
+
+			//the extended wire
+			let wire1 = new THREE.Mesh(new THREE.BoxGeometry(20.8, 20.8, 90).translate(0, 0, 45 + 10.4),
+				new THREE.MeshPhongMaterial({ color: 'orange' }));
+			let wire2 = wire1.clone()
+			wire2.scale.set(1, 1, -1)
+			box.add(wire, wire1, wire2)
+			ELEMENTS.add(box)
+			// box.position.set(-19.5, 17, -1.5)
+			addElectrons(50);
+			addAtoms()
+			randMovement()
+			ELEMENTS.position.set(-190, 160, -16)
+			// createLabels()
+
+		}
+
+	</script>
+</body>
+
+</html>
