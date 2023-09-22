@@ -88,21 +88,21 @@
 
 		}
 		//button and html elements
-		let message = "";
-		let messageEl = document.getElementById("message-el");
-		let conductorEl = document.getElementById("conductor-el");
-		let equationEl = document.getElementById("equations-el");
-		let ruleEl = document.getElementById("rule-el");
-		const buttonSlowEl = document.getElementById("slow-el");
+		// let message = "";
+		// let messageEl = document.getElementById("message-el");
+		// let conductorEl = document.getElementById("conductor-el");
+		// let equationEl = document.getElementById("equations-el");
+		// let ruleEl = document.getElementById("rule-el");
+		// const buttonSlowEl = document.getElementById("slow-el");
 
 		let inputVolt = document.getElementById("volt");
 
 		let displayVolt = document.getElementById("voltDisplay");
 
-		const buttonFlip = document.getElementById('flip-el');
-		const buttonFlow = document.getElementById('flow-el');
-		const buttonDirection = document.getElementById('direction-el');
-		const buttonHand = document.getElementById('hand-el');
+		// const buttonFlip = document.getElementById('flip-el');
+		// const buttonFlow = document.getElementById('flow-el');
+		// const buttonDirection = document.getElementById('direction-el');
+		// const buttonHand = document.getElementById('hand-el');
 
 		const motorSimsEl = document.getElementById('motorSims');
 
@@ -111,7 +111,7 @@
 		scene.background = new THREE.Color(0xbfd1e5);
 
 		//camera
-		createCamera(50, 50, 40, 60);
+		createCamera(50, 50, 40, 80);
 		stats = new Stats();
 		clock = new THREE.Clock();
 		document.body.appendChild(stats.dom);
@@ -404,7 +404,7 @@
 			// 	render()
 			// })
 
-			inputVolt.addEventListener("click", function (event) {
+			inputVolt.addEventListener("input", function (event) {
 				let A = Number(inputVolt.value)
 				displayVolt.innerHTML = A * 2.5
 				params.V = A / 5
