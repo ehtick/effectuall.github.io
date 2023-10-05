@@ -28,11 +28,9 @@
         The Photoelectric Effect
 
     </div>
-<div id="sidemenu">
-   
-</div>
+
     <div id="menu">
-         <a> Work Potential = </a><a id="workFn">4.2</a><a> eV</a><br>
+        <!-- <a> Work Potential = </a><a id="workFn">4.2</a><a> eV</a><br>
         <a>Cutoff Wavelength (<em>&lambda;<sub>c</sub></em>) =<em>
                 <div class="fraction">
                     <span class="fup"> hc</span>
@@ -46,30 +44,25 @@
                     <span class="bar">/</span>
                     <span class="fdn"> &lambda;<sub>c</sub> </span>
                 </div>
-            </em> = </a><a id="freq"></a> x 10<sup>14</sup> Hz<br>
-        
-       
-        <a><input type="range" id="wavelength" name="wavelength" min="1.00" max="9.00" value="2.00" step="0.01">
-            <label for="wavelength"><strong>Wavelength</strong></label>
-        </a>= <a id="wavevalue"></a><a> nm </a><br>
-        <a> &#10148<label for="frequency"><strong>Frequency</strong></label>
+            </em> = </a><a id="freq"></a> x 10<sup>14</sup> Hz<br> -->
+        <!-- <a> &#10148<label for="frequency"><strong>Frequency</strong></label>
         </a>= <a id="freqvalue"></a><a> x 10<sup>14</sup> Hz </a><br>
         <a>&#10148 Max. K.E. of Electron = </a><a id="electronKE">0</a><a> eV</a><br>
-        <a>&#10148 Min. K.E. of Electron = </a><a>0 eV</a><br>
-        <a><input type="range" id="intensity" name="intensity" min="2.5" max="10" value="10" step="2.5">
+        <a>&#10148 Min. K.E. of Electron = </a><a>0 eV</a><br> -->
+        <a><input type="range" id="wavelength" name="wavelength" min="0.5" max="9.00" value="2.00" step="0.05">
+            <label for="wavelength"><strong>Wavelength</strong></label>
+        </a>= <a id="wavevalue"></a><a> nm </a><br>
+        <a><input type="range" id="intensity" name="intensity" min="0.5" max="1" value="1" step="0.25">
             <label for="intensity"><strong>Intensity</strong></label>
         </a> </a>= <a id="intensityValue"></a><a> % </a><br>
-        <a><input type="range" id="voltage" name="voltage" min="-10" max="10" value="5" step="0.1">
+        <a><input type="range" id="voltage" name="voltage" min="-5" max="10" value="5" step="0.1">
             <label for="voltage"><strong>Voltage </strong></label>
         </a> </a>= <a id="voltageValue"></a><a> V </a><br>
-        <button id="wave">STOP PHOTONS</button>
-        <button id="changeElement">Al/Na</button>
-        <button id="theorybutton" onClick="theorySite()">THEORY</button><br>
-        <a style="font-weight: bolder;" id="message-el">
-            Light of wavelength 200 nm shines on an aluminum surface; 4.20 eV is required to eject an electron. What is
-            the kinetic energy of (a) the fastest and (b) the slowest ejected electrons? (c) What is the
-            stopping potential for this situation? (d) What is the cutoff wavelength for aluminum?
-        </a>
+        <button id="wave">START</button>
+
+
+        <button style="visibility: hidden;" id="plot"> PLOT (K<sub>max</sub>)</button>
+
     </div>
     <canvas style="visibility: hidden;" id="drawing-canvas" height="150" width="300"></canvas>
 
@@ -80,7 +73,7 @@
 
             window.open("../Theory/Quantum/Quantum_Photoelectric_Effect.html", "_self")
         }
-
+        // style="visibility: hidden;" 
     </script>
     <script type="module">
         import * as THREE from '../build/three.module.js';
@@ -89,41 +82,37 @@
         import { GUI } from '../jsm/libs/lil-gui.module.min.js';
         import { TWEEN } from '../jsm/libs/tween.module.min.js';
 
+
+        //canvas description
         let drawingCanvas, drawingContext;
         let maxWidth = 300, maxHeight = 150;
         let halfWidth = maxWidth / 2;
         let xAxis = 25, yAxis = 150 - 15;
+
         let emitter, cathode, pos, cone;
         let photon_to, photon_fro, photon_scaleDown, photon_scaleUp;
         let tween_to, tween_fro, tween_scaleDown, tween_scaleUp;
+
+        //general
         let camera, aspect, fov, stats, clock, gui;
-        let scene, renderer, labelRenderer, controls, container, electron, currentNeedle, voltageNeedle;
-        let requestID;
+        let scene, renderer, controls, container, electron, currentNeedle, voltageNeedle;
         let PHOTON, colLight;
-        let t = 2000;
         let points = [], lattice = [], LINE = [], electronList = [];
-        const pi = Math.PI, planck = 6.626e-34, charge = 1.602e-19, speed = 3e8, hc = 12.408e-7;
-        let stop = false;
+        const hc = 1240.8 //eV;
+        const speed = 3e8;
+        let stop = true;
         let change = false;
-        let wave = new THREE.Group();
-        let WAVES = new THREE.Group();
         let ELECTRONS = new THREE.Group();
         let group = new THREE.Group();
-        let v = new THREE.Vector3(.1, .1, .1);
-        let colorList = [];
+        let colorList = {};
         let params = {
-            element: 'aluminium',
-            photon: 'white',
-            iValue: 2,
+            iValue: 1,
             intensity: 10,
-            flow: false,
             workfn: 4.20,
-            wavelength: 2.00e-7,
-            waveCut: 0,
-            freqCut: 0,
-            kenergy: 0,
+            waveCut: 295,
             voltage: 5,
-            rotation: 0.8
+            light: 2,
+            wave: 0.75
         }
         let voltageX = [-15, -10, -5, -4.2, -4, -3.8, -2, 0, 2, 4.2, 4.5, 5, 10, 15, 20, 25, 30, 35]
         let current1Y = [0, 0, 0, 0,
@@ -134,29 +123,347 @@
             0.275, 0.275, 0.275, 0.275, 0.275, 0.275, 0.275, 0.275]
         let freqAl = [30, 25, 20, 15, 10.2, -9]
         let kEnergyAl = [13.1, 9.7, 6.52, 3.21, 0, -14]
-        let freqNa = [30, 25, 20, 15, 10, 7.5, 5.95, -9]
-        let kEnergyNa = [15.9, 12.2, 9.14, 6.05, 2.73, 1, 0, -10]
-        let message = ["Light of wavelength 200 nm shines on an aluminium surface; 4.20 eV is required to eject an electron. What is the kinetic energy of (a) the fastest and (b) the slowest ejected electrons? (c) What is the stopping potential for this situation? (d) What is the cutoff wavelength for aluminum?", "A sodium surface is illuminated with light having a wavelength of 300 nm. The work function for sodium metal is 2.46 eV. Find (a) the maximum kinetic energy of the ejected photoelectrons and (b) the cutoff wavelength for sodium"];
+
         //button and html elements
         let waveButton = document.getElementById('wave');
-        let elementButton = document.getElementById('changeElement');
-        let photon = document.getElementById('photon');
-        let freq = document.getElementById('freq');
-        let electronKE = document.getElementById('electronKE');
-        let intensity = document.getElementById('intensity');
-        let intensityValue = document.getElementById('intensityValue');
-        let wavelength = document.getElementById('wavelength');
-        let waveValue = document.getElementById('wavevalue');
-        let freqValue = document.getElementById('freqvalue');
-        let voltage = document.getElementById('voltage');
-        let voltageValue = document.getElementById('voltageValue');
-        let messageEl = document.getElementById("message-el");
+        let plotButton = document.getElementById('plot');
 
-        waveValue.innerHTML = Math.ceil(params.wavelength * 1e9);
+        let intensityInput = document.getElementById('intensity');
+        let intensityValue = document.getElementById('intensityValue');
+
+        let waveInput = document.getElementById('wavelength');
+        let waveValue = document.getElementById('wavevalue');
+
+        let voltageInput = document.getElementById('voltage');
+        let voltageValue = document.getElementById('voltageValue');
+
+        waveValue.innerHTML = 200;
         intensityValue.innerHTML = params.intensity * 10;
         voltageValue.innerHTML = voltage.value;
+
         init()
         animate()
+
+        function init() {
+            //scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xbfd1e5);
+            clock = new THREE.Clock();
+            createCamera(-4, 15, 35);
+            createRenderer();
+            createControls(0, 1, -2.5);
+            createLights();
+
+            calCutoff();
+            calKenergy(params.wavelength);
+            wavePoints()
+            randomColor();
+            const scaleHorizontal = new THREE.GridHelper(70, 70);
+            scene.add(scaleHorizontal);
+
+            // phototelectric apparatus
+            createConnector();
+            createMeasure();
+            vacuumChamber();
+            colLight = colorList[params.light];
+            photonSource(colLight);
+            canvasAction()
+            document.body.appendChild(renderer.domElement);
+
+            window.addEventListener('resize', onWindowResize);
+            buttonAction();
+        }
+
+        function buttonAction() {
+
+            waveButton.addEventListener("click", function (event) {
+                stop = !stop;
+                if (stop) {
+                    drawingCanvas.style.visibility = 'hidden';
+                    waveButton.innerHTML = "START"
+                    stopAction()
+
+                } else {
+                    drawingCanvas.style.visibility = 'visible';
+                    plotButton.style.visibility = 'visible';
+                    waveButton.innerHTML = "STOP"
+                    waveAction()
+                    voltageAction()
+                    // voltageAction(params.voltage)
+                }
+
+            });
+
+            plotButton.addEventListener("click", function (event) {
+                change = !change;
+                if (change) {
+
+                    plotButton.innerHTML = "PLOT I-V"
+                    canvasEnergy()
+                    console.log('KE plot')
+
+                } else {
+                    canvasAction()
+                    plotButton.innerHTML = "PLOT K<sub>max</sub>"
+                    console.log('I-V plot')
+                }
+
+            });
+
+
+            waveInput.addEventListener("change", function (event) {
+
+                waveValue.innerHTML = Math.ceil(waveInput.value * 1e2);
+                let W = Math.ceil(waveInput.value * 1e2);
+                params.light = Math.floor(waveInput.value);
+
+                colLight = colorList[params.light];
+                cone.material.color = colLight
+
+                if (W <= params.waveCut) {
+                    params.wave = (0.75 / (waveInput.value))
+                    console.log(W, params.waveCut, params.wave)
+
+                } else {
+                    params.wave = 0
+                    console.log(W, params.waveCut, params.wave)
+                }
+
+                if (!stop) {
+                    voltageAction()
+                }
+
+            });
+
+            intensityInput.addEventListener("change", function () {
+                params.intensity = intensityInput.value * 10;
+                intensityValue.innerHTML = params.intensity * 10;
+                params.iValue = Number(intensityInput.value);
+                voltageAction()
+                console.log(params.intensity)
+            });
+
+            voltageInput.addEventListener("change", function () {
+
+                let X = voltageInput.value
+                voltageValue.innerHTML = X;
+                params.voltage = Number(X);
+                // if (params.voltage < params.workfn) {
+                //     params.wave = params.voltage
+                // } else {
+                //     params.wave = 1.25
+                // }
+
+                voltageAction()
+                console.log(params.voltage, params.wave)
+            });
+        }
+
+
+        function intensityAction(value) {
+
+            if (params.wavelength <= params.waveCut) {
+                calKenergy(params.wavelength);
+
+                for (let i = 0; i < value; i++) {
+                    let electronGeometry = new THREE.IcosahedronGeometry(.25, 0);
+                    let electronMaterial = new THREE.MeshBasicMaterial({ color: 0xce00ff });
+                    let electron = new THREE.Mesh(electronGeometry, electronMaterial);
+                    electron.position.set(0, Math.random() * (5 + i / 5) - (2.5 + i / 10), Math.random() * (1 + i / 5) - (0.5 + i / 10));
+                    electronList.push(electron)
+                    ELECTRONS.add(electron)
+                }
+                setTimeout(function () {
+                    scene.add(ELECTRONS);
+                    ELECTRONS.position.set(1, 8, 0);
+                    electronChain(ELECTRONS)
+                }, 2500);
+
+            }
+
+        }
+
+        function photonChain(photon) {
+            photon_to = new TWEEN.Tween(photon.position)
+                .to({ x: 1, y: 8 }, 2000);
+
+            photon_scaleDown = new TWEEN.Tween(photon.scale)
+                .to({ x: 0, y: 0, z: 0 }, 50);
+
+            photon_fro = new TWEEN.Tween(photon.position)
+                .to({ x: -1, y: 12.5 }, 1000);
+
+            photon_scaleUp = new TWEEN.Tween(photon.scale)
+                .to({ x: 1, y: 1, z: 1 }, 50);
+
+            photon_to.chain(photon_scaleDown);
+            photon_scaleDown.chain(photon_fro);
+            photon_fro.chain(photon_scaleUp);
+            photon_scaleUp.chain(photon_to);
+
+            photon_to.start();
+        }
+
+        function electronChain(A) {
+
+            tween_to = new TWEEN.Tween(A.position)
+                .to({ x: pos, y: 8 }, 2000);
+
+            tween_scaleDown = new TWEEN.Tween(A.scale)
+                .to({ x: 0, y: 0, z: 0 }, 50);
+
+            tween_fro = new TWEEN.Tween(A.position)
+                .to({ x: 1, y: 8 }, 1000);
+
+            tween_scaleUp = new TWEEN.Tween(A.scale)
+                .to({ x: 1, y: 1, z: 1 }, 50);
+
+            tween_to.chain(tween_scaleDown);
+            tween_scaleDown.chain(tween_fro);
+            tween_fro.chain(tween_scaleUp);
+            tween_scaleUp.chain(tween_to);
+
+            tween_to.start();
+        }
+
+        function stopAction() {
+            while (group.children.length > 0) {
+                const A = group.children[0];
+                A.parent.remove(A);
+            }
+            while (ELECTRONS.children.length > 0) {
+                const A = ELECTRONS.children[0];
+                A.parent.remove(A);
+            }
+            setTimeout(function () {
+
+                new TWEEN.Tween(currentNeedle.rotation)
+                    .to({ z: 0 }, 2500)
+                    .easing(TWEEN.Easing.Cubic.Out)
+                    .start()
+            }, 500)
+        }
+
+        function waveAction() {
+
+            group = new THREE.Group();
+            ELECTRONS = new THREE.Group();
+            group.rotation.set(0, -0.5, 0.08);
+            group.position.set(-1, 12.5, 0);
+            colLight = colorList[params.light];
+            waveChange(params.intensity, colLight);
+            let B = (params.intensity * params.iValue).toFixed(2);
+            intensityAction(B);
+            photonChain(group);
+            pos = cathode.position.x;
+
+        }
+
+        function currentAction() {
+            //Max Current full intensity
+            let A = - (params.iValue) * (params.intensity / params.voltage) * params.wave
+            new TWEEN.Tween(currentNeedle.rotation)
+                .to({ z: A }, 500)
+                .easing(TWEEN.Easing.Cubic.Out)
+                .start()
+
+            console.log(A, params.intensity, params.iValue, 'Max Current full intensity')
+        }
+
+        function voltageAction() {
+            let A = Number(params.voltage / 7)
+            // console.log(A, params.voltage, params.workfn, params.iValue, params.intensity)
+
+            new TWEEN.Tween(voltageNeedle.rotation)
+                .to({ z: -(A) }, 500)
+                .easing(TWEEN.Easing.Cubic.Out)
+                .start()
+
+
+            if (params.voltage <= -params.workfn) {
+
+                while (group.children.length > 0) {
+                    const X = group.children[0];
+                    X.parent.remove(X);
+                }
+                while (ELECTRONS.children.length > 0) {
+                    const X = ELECTRONS.children[0];
+                    X.parent.remove(X);
+                }
+                new TWEEN.Tween(currentNeedle.rotation)
+                    .to({ z: 0 }, 500)
+                    .easing(TWEEN.Easing.Cubic.Out)
+                    .start()
+
+                console.log('below CutOff, I = 0 mA')
+
+            } else if (params.voltage >= params.workfn) {
+                while (group.children.length > 0) {
+                    const X = group.children[0];
+                    X.parent.remove(X);
+                }
+                while (ELECTRONS.children.length > 0) {
+                    const X = ELECTRONS.children[0];
+                    X.parent.remove(X);
+                }
+
+
+                let A = - (params.iValue / 5) * (params.intensity) * params.wave
+                waveAction()
+                setTimeout(function () {
+
+                    new TWEEN.Tween(currentNeedle.rotation)
+                        .to({ z: A }, 500)
+                        .easing(TWEEN.Easing.Cubic.Out)
+                        .start()
+                }, 500);
+
+                console.log('Max Value, I = Imax mA')
+
+
+            } else if (params.voltage > -params.workfn && params.voltage < params.workfn) {
+                while (group.children.length > 0) {
+                    const X = group.children[0];
+                    X.parent.remove(X);
+                }
+                while (ELECTRONS.children.length > 0) {
+                    const X = ELECTRONS.children[0];
+                    X.parent.remove(X);
+                }
+
+                let A = (params.intensity / 5) * params.wave
+                params.iValue = A / (1 + Math.pow(Math.E, -params.voltage));
+                setTimeout(function () {
+
+                    new TWEEN.Tween(currentNeedle.rotation)
+                        .to({ z: -params.iValue }, 500)
+                        .easing(TWEEN.Easing.Cubic.Out)
+                        .start()
+                }, 500);
+
+                waveAction();
+                console.log(A, params.iValue, 'above cutoff,but below -0.9 V, Varying I microA')
+
+            }
+
+        }
+
+        function calCutoff() {
+
+            let x = (hc) / (params.workfn);  // cutfoff wavelength for aluminium
+            params.waveCut = Number((parseFloat(x)).toFixed(0));
+        }
+
+        function calKenergy(A) {
+
+            let x = (hc) / A;
+            // let y = (x - params.workfn) * charge;
+            // let z = (speed / A) * 1e9
+            // params.kenergy = Number.parseFloat(z).toExponential(2);
+            // electronKE.innerHTML = (params.kenergy * 1e19).toFixed(2);
+            // freqValue.innerHTML = (z) * 1e-6;
+            // console.log(x, params.kenergy, params.freq)
+        }
 
         function setupCanvasDrawing() {
 
@@ -233,92 +540,10 @@
 
         }
 
-        function calCutoff() {
-            let x = (hc) / (params.workfn);
-            let y = speed / x;
-            params.waveCut = Number.parseFloat(x).toExponential(2);
-            params.freqCut = Number.parseFloat(y).toExponential(2);
-            freq.innerHTML = (params.freqCut * 1e-14)
-            photon.innerHTML = Math.ceil(params.waveCut * 1e9)
-            // console.log(params.waveCut, params.freqCut, params.workfn)
-        }
-
-        function calKenergy(A) {
-
-            let x = (hc) / A;
-            let y = (x - params.workfn) * charge;
-            let z = (speed / A )* 1e-14
-            params.kenergy = Number.parseFloat(y).toExponential(2);
-            electronKE.innerHTML = (params.kenergy * 1e19).toFixed(2);
-            freqValue.innerHTML = (z).toFixed(2);
-            // console.log(speed / A * 1e-14, params.kenergy)
-        }
-
-        function buttonAction() {
-
-            waveButton.addEventListener("click", function (event) {
-                stop = !stop;
-                // waveAction()
-                voltageAction(params.voltage)
-                canvasRedraw()
-            });
-
-            elementButton.addEventListener("click", function (event) {
-                change = !change
-                if (change) {
-                    console.log('change to Sodium problem')
-                    params.element = 'Sodium';
-                    params.workfn = 2.46;
-                    params.wavelength = 3.00e-7;
-                    workFn.innerHTML = params.workfn;
-                    messageEl.innerHTML = message[1];
-                    waveValue.innerHTML = Math.ceil( params.wavelength * 1e9);
-                    calCutoff();
-                    calKenergy(params.wavelength)
-                } else {
-                    console.log('change to Aluminium problem')
-                    params.element = 'Aluminium';
-                    params.workfn = 4.2;
-                    params.wavelength = 2.00e-7;
-                    workFn.innerHTML = params.workfn;
-                    messageEl.innerHTML = message[0];
-                    waveValue.innerHTML = Math.ceil( params.wavelength * 1e9);
-                    calCutoff();
-                    calKenergy(params.wavelength)
-                }
-                canvasAction()
-
-            });
-
-            wavelength.addEventListener("change", function (event) {
-                waveValue.innerHTML = Math.ceil(wavelength.value * 1e2);
-                params.wavelength = Number.parseFloat(wavelength.value * 1e-7).toExponential(2);
-                colLight = colorList[Math.floor(Math.random() * colorList.length)];
-                // waveAction();
-                voltageAction(params.voltage)
-            });
-
-            intensity.addEventListener("change", function () {
-                params.intensity = intensity.value;
-                intensityValue.innerHTML = params.intensity * 10;
-                params.iValue = params.intensity / 5;
-                voltageAction(params.voltage)
-            });
-
-            voltage.addEventListener("change", function () {
-                let X = voltage.value
-                voltageValue.innerHTML = X;
-                params.voltage = X;
-
-                voltageAction(params.voltage)
-                canvasAction();
-            });
-        }
-
         function canvasAction() {
 
             setupCanvasDrawing();
-            drawingCanvas.style.visibility = 'visible';
+
             drawAxes(drawingContext, 80, 135, 70)
             listLabel(drawingContext, {
                 xlabel: "V (volts)",
@@ -358,10 +583,9 @@
 
         }
 
-        function canvasRedraw() {
+        function canvasEnergy() {
 
             setupCanvasDrawing();
-            drawingCanvas.style.visibility = 'visible';
             drawAxes(drawingContext, 90, 75, 70)
 
             listLabel(drawingContext, {
@@ -369,30 +593,20 @@
                 ylabel: "K.E (eV)",
                 label1: "Al",
                 col1: 'green',
-                label2: "Na",
-                col2: 'red',
                 label1Posx: halfWidth + 70,
                 label1Posy: 60,
-                label2Posx: halfWidth + 40,
-                label2Posy: 15,
                 xPos: 100,
                 yPos: 55,
                 x: 150,
                 y: 20,
                 length: 5
             });
-            drawingContext.fillText(-2.46 + ' V ', xAxis + 10, yAxis -10);
             drawingContext.fillText(-4.20 + ' V ', xAxis + 10, yAxis + 10);
             for (let i = 0; i < freqAl.length - 1; i++) {
 
                 plotGraph(drawingContext, xAxis + 100 + freqAl[i] * 4, yAxis - 60 - kEnergyAl[i] * 5, 3, 'green', xAxis + 100 + freqAl[i + 1] * 4, yAxis - 60 - kEnergyAl[i + 1] * 5);
-                // plotGraph(drawingContext, xAxis + 100 + freqNa[i] * 4, yAxis - 60 - kEnergyNa[i] * 4, 3, 'red', xAxis + 100 + freqNa[i + 1] * 4, yAxis - 60 - kEnergyNa[i + 1] * 4);
             }
-            for (let i = 0; i < freqNa.length - 1; i++) {
 
-                // plotGraph(drawingContext, xAxis + 100 + freqAl[i] * 4, yAxis - 60 - kEnergyAl[i] * 4, 3, 'green', xAxis + 100 + freqAl[i + 1] * 4, yAxis - 60 - kEnergyAl[i + 1] * 4);
-                plotGraph(drawingContext, xAxis + 100 + freqNa[i] * 4, yAxis - 60 - kEnergyNa[i] * 5, 3, 'red', xAxis + 100 + freqNa[i + 1] * 4, yAxis - 60 - kEnergyNa[i + 1] * 5);
-            }
         }
 
         function waveChange(N, col) {
@@ -417,51 +631,14 @@
             scene.add(group);
         }
 
-        function init() {
-            //scene
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0xbfd1e5);
-            createCamera(-4, 15, 35);
-            createRenderer();
-            createControls(0, 1, -2.5);
-            createLights();
-            calCutoff();
-            calKenergy(params.wavelength);
-            const scaleHorizontal = new THREE.GridHelper(70, 70);
-            scene.add(scaleHorizontal);
+        function randomColor() {
 
-            clock = new THREE.Clock();
-
-            wavePoints()
-            vacuumChamber();
-            photonSource();
-
-            randomColor(500);
-
-            // guiControls();
-            createConnector();
-            createMeasure();
-
-            colLight = colorList[Math.floor(Math.random() * colorList.length)];
-            group = new THREE.Group();
-            ELECTRONS = new THREE.Group();
-            group.rotation.set(0, -0.5, 0.08);
-            group.position.set(-1, 12.5, 0);
-            voltageAction(params.voltage);
-
-            document.body.appendChild(renderer.domElement);
-
-            window.addEventListener('resize', onWindowResize);
-            buttonAction();
-        }
-
-        function randomColor(N) {
-            for (let i = 0; i < N; i++) {
-                let r = Math.random();
-                let g = Math.random();
-                let b = Math.random();
+            for (let i = 0; i < 10; i++) {
+                let r = 0.5 + i / 10;
+                let g = 1;
+                let b = 0.5 - i / 10;
                 let color = new THREE.Color(r, g, b);
-                colorList.push(color);
+                colorList[i] = color;
             }
         }
 
@@ -494,7 +671,7 @@
         function wavePoints() {
             let a = new THREE.Vector3(0, 0, 0);
 
-            for (let i = 0; i < 2 * pi; i = i + 0.25) {
+            for (let i = 0; i < 2 * Math.PI; i = i + 0.25) {
 
                 a = new THREE.Vector3(i, 0.5 * Math.sin(4 * i), 0);
 
@@ -540,12 +717,9 @@
             node2.position.set(-3.25, 1.5, 0)
         }
 
-        function photonSource() {
+        function photonSource(col) {
             const geometry = new THREE.CylinderGeometry(.5, 1.5, 3, 8, 1, true);
-            const material = new THREE.MeshPhongMaterial({
-                color: 0xffff00,
-                side: THREE.DoubleSide
-            });
+            const material = new THREE.MeshPhongMaterial({ color: col, wireframe: false, side: THREE.DoubleSide });
             cone = new THREE.Mesh(geometry, material);
             cone.position.set(-8, 19, -3);
             cone.rotation.set(0, -0.5, 0.75)
@@ -626,7 +800,7 @@
             voltage.position.set(-5, 0, 10.5);
             voltagePlane.position.set(1.3, 0.9, 1.05);
             voltageNeedle.position.set(0, 0.8, 0);
-            voltageNeedle.rotation.set(0, 0, -params.voltage / 10);
+            voltageNeedle.rotation.set(0, 0, -params.voltage / 7);
             // voltageDown.add(voltageUp);
             scene.add(voltage);
             voltage.add(voltagePlane);
@@ -736,151 +910,6 @@
 
         }
 
-        function intensityAction(value) {
-
-            if (params.wavelength <= params.waveCut) {
-                calKenergy(params.wavelength);
-                electronKE.innerHTML = (params.kenergy * 1e19).toFixed(2);
-                for (let i = 0; i < value; i++) {
-                    let electronGeometry = new THREE.IcosahedronGeometry(.25, 0);
-                    let electronMaterial = new THREE.MeshBasicMaterial({ color: 0xce00ff });
-                    let electron = new THREE.Mesh(electronGeometry, electronMaterial);
-                    electron.position.set(0, Math.random() * (5 + i / 5) - (2.5 + i / 10), Math.random() * (1 + i / 5) - (0.5 + i / 10));
-                    electronList.push(electron)
-                    ELECTRONS.add(electron)
-                }
-                setTimeout(function () {
-                    scene.add(ELECTRONS);
-                    ELECTRONS.position.set(1, 8, 0);
-                    electronChain(ELECTRONS)
-                }, 2500);
-
-            } else {
-                tween_to.stop();
-                electronKE.innerHTML = 0;
-            }
-
-        }
-
-        function photonChain(photon) {
-            photon_to = new TWEEN.Tween(photon.position)
-                .to({ x: 1, y: 8 }, 2000);
-
-            photon_scaleDown = new TWEEN.Tween(photon.scale)
-                .to({ x: 0, y: 0, z: 0 }, 50);
-
-            photon_fro = new TWEEN.Tween(photon.position)
-                .to({ x: -1, y: 12.5 }, 1000);
-
-            photon_scaleUp = new TWEEN.Tween(photon.scale)
-                .to({ x: 1, y: 1, z: 1 }, 50);
-
-            photon_to.chain(photon_scaleDown);
-            photon_scaleDown.chain(photon_fro);
-            photon_fro.chain(photon_scaleUp);
-            photon_scaleUp.chain(photon_to);
-
-            photon_to.start();
-        }
-
-        function electronChain(A) {
-
-            tween_to = new TWEEN.Tween(A.position)
-                .to({ x: pos, y: 8 }, t);
-
-            tween_scaleDown = new TWEEN.Tween(A.scale)
-                .to({ x: 0, y: 0, z: 0 }, 50);
-
-            tween_fro = new TWEEN.Tween(A.position)
-                .to({ x: 1, y: 8 }, 1000);
-
-            tween_scaleUp = new TWEEN.Tween(A.scale)
-                .to({ x: 1, y: 1, z: 1 }, 50);
-
-            tween_to.chain(tween_scaleDown);
-            tween_scaleDown.chain(tween_fro);
-            tween_fro.chain(tween_scaleUp);
-            tween_scaleUp.chain(tween_to);
-
-            tween_to.start();
-        }
-
-        function waveAction() {
-            if (stop) {
-
-                setTimeout(function () {
-                    scene.remove(group)
-                    scene.remove(ELECTRONS)
-
-                    new TWEEN.Tween(currentNeedle.rotation)
-                        .to({ z: 0 }, 2500)
-                        .easing(TWEEN.Easing.Cubic.Out)
-                        .start()
-                }, 2500)
-                waveButton.innerHTML = 'EMIT PHOTONS'
-            } else {
-                group = new THREE.Group();
-                ELECTRONS = new THREE.Group();
-                group.rotation.set(0, -0.5, 0.08);
-                group.position.set(-1, 12.5, 0);
-                waveChange(params.intensity, colLight);
-                let B = (params.intensity * params.iValue).toFixed(2);
-                intensityAction(B);
-                photonChain(group);
-                pos = cathode.position.x;
-                waveButton.innerHTML = 'STOP PHOTONS'
-            }
-        }
-
-        function voltageAction(A) {
-            // console.log(A, params.workfn, params.iValue, params.intensity)
-
-            new TWEEN.Tween(voltageNeedle.rotation)
-                .to({ z: -A / 10 }, 2500)
-                .easing(TWEEN.Easing.Cubic.Out)
-                .start()
-            if (A <= -params.workfn) {
-                tween_to.stop();
-                scene.remove(ELECTRONS)
-                new TWEEN.Tween(currentNeedle.rotation)
-                    .to({ z: 0 }, 2500)
-                    .easing(TWEEN.Easing.Cubic.Out)
-                    .start()
-
-                // console.log('below CutOff, I = 0 mA')
-
-            } else if (A >= params.workfn) {
-                scene.remove(group, ELECTRONS)
-                waveAction()
-                setTimeout(function () {
-
-                    new TWEEN.Tween(currentNeedle.rotation)
-                        .to({ z: -(8) * (params.intensity / 30) }, 2500)
-                        .easing(TWEEN.Easing.Cubic.Out)
-                        .start()
-                }, 2500);
-
-                // console.log('Max Value, I = Imax mA')
-
-            } else if (A > -params.workfn && A < params.workfn) {
-                scene.remove(group, ELECTRONS)
-                let X = 2.5 * 1 / (1 + Math.pow(Math.E, -A))
-                params.iValue = X;
-                setTimeout(function () {
-
-                    new TWEEN.Tween(currentNeedle.rotation)
-                        .to({ z: -X }, 2500)
-                        .easing(TWEEN.Easing.Cubic.Out)
-                        .start()
-                }, 2500);
-
-                waveAction();
-                // console.log('above cutoff,but below -0.9 V, Varying I microA')
-
-            }
-
-        }
-// next show KE vs V plot display.. Hide V vs I plot 
     </script>
 </body>
 
