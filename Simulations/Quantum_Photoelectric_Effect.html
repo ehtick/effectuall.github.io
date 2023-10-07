@@ -49,7 +49,7 @@
         </a>= <a id="freqvalue"></a><a> x 10<sup>14</sup> Hz </a><br>
         <a>&#10148 Max. K.E. of Electron = </a><a id="electronKE">0</a><a> eV</a><br>
         <a>&#10148 Min. K.E. of Electron = </a><a>0 eV</a><br> -->
-        <a><input type="range" id="wavelength" name="wavelength" min="0.5" max="9.00" value="2.00" step="0.05">
+        <a><input type="range" id="wavelength" name="wavelength" min="1" max="4.00" value="2.00" step="0.5">
             <label for="wavelength"><strong>Wavelength</strong></label>
         </a>= <a id="wavevalue"></a><a> nm </a><br>
         <a><input type="range" id="intensity" name="intensity" min="0.5" max="1" value="1" step="0.25">
@@ -64,7 +64,7 @@
         <button style="visibility: hidden;" id="plot"> PLOT (K<sub>max</sub>)</button>
 
     </div>
-    <canvas style="visibility: hidden;" id="drawing-canvas" height="150" width="300"></canvas>
+    <canvas style="visibility: hidden;" id="drawing-canvas" height="300" width="300"></canvas>
 
 
     <script>
@@ -85,9 +85,9 @@
 
         //canvas description
         let drawingCanvas, drawingContext;
-        let maxWidth = 300, maxHeight = 150;
+        let maxWidth = 300, maxHeight = 300;
         let halfWidth = maxWidth / 2;
-        let xAxis = 25, yAxis = 150 - 15;
+        let xAxis = 25, yAxis = 250;
 
         let emitter, cathode, pos, cone;
         let photon_to, photon_fro, photon_scaleDown, photon_scaleUp;
@@ -98,7 +98,7 @@
         let scene, renderer, controls, container, electron, currentNeedle, voltageNeedle;
         let PHOTON, colLight;
         let points = [], lattice = [], LINE = [], electronList = [];
-        const hc = 1240.8 //eV;
+        const hc = 12.41e-7 //eV;
         const speed = 3e8;
         let stop = true;
         let change = false;
@@ -112,17 +112,39 @@
             waveCut: 295,
             voltage: 5,
             light: 2,
-            wave: 0.75
+            wave: 0.75,
+            stopV: 2,
+            wavelength: 200
         }
-        let voltageX = [-15, -10, -5, -4.2, -4, -3.8, -2, 0, 2, 4.2, 4.5, 5, 10, 15, 20, 25, 30, 35]
-        let current1Y = [0, 0, 0, 0,
-            0.01, 0.02, 0.15, 0.3, 0.5, 0.54,
-            0.55, 0.55, 0.55, 0.55, 0.55, 0.55, 0.55, 0.55]
-        let current2Y = [0, 0, 0, 0,
-            0.005, 0.01, 0.075, 0.15, 0.25, 0.272,
+        let voltageX, currentY, current1Y, current2Y;
+
+        let wave200V = [-15, -10, -5, -4.5, -4, -3.5, -3, -2.5,
+        -2, -1.5, -1, 0, 1, 1.5, 2,
+            2.5, 3, 3.5, 4, 4.5, 5, 10, 15, 20, 25, 30, 35]
+        let wave200I = [0, 0, 0, 0, 0, 0, 0, 0,
+            0.02, 0.04, 0.1, 0.5, 0.84, 0.9, 0.97,
+            1.05, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1]
+        let wave200I1 = [0, 0, 0, 0, 0, 0, 0, 0,
+            0.01, 0.02, 0.05, 0.25, 0.42, 0.49, 0.5,
+            0.55, 0.55, 0.55, 0.55, 0.55, 0.55, 0.55, 0.55, 0.55, 0.55, 0.55, 0.55]
+        let wave200I2 = [0, 0, 0, 0, 0, 0, 0, 0,
+            0.005, 0.01, 0.025, 0.125, 0.21, 0.245, 0.25,
+            0.275, 0.275, 0.275, 0.275, 0.275, 0.275, 0.275, 0.275, 0.275, 0.275, 0.275, 0.275]
+
+        let wave100V = [-15, -10, -9, -8, -8.5,
+        -8.2, -8, -7.5, -5, -3, -2, -1, 0, 1, 2, 3, 7.5, 8, 8.2,
+            8, 8.5, 9, 10, 15, 20, 25, 30, 35]
+        let wave100I = [0, 0, 0, 0, 0,
+            0.02, 0.04, 0.1, 0.4, 0.7, 0.84, 0.9, 0.99, 1.04, 1.061, 1.08, 1.095, 1.1,
+            1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1]
+        let wave100I1 = [0, 0, 0, 0, 0,
+            0.01, 0.01, 0.05, 0.2, 0.35, 0.42, 0.45, 0.495, 0.52, 0.53, 0.54, 0.547, 0.55,
+            0.55, 0.55, 0.55, 0.55, 0.55, 0.55, 0.55, 0.55, 0.55]
+        let wave100I2 = [0, 0, 0, 0, 0,
+            0.005, 0.005, 0.025, 0.1, 0.175, 0.21, 0.225, 0.2475, 0.26, 0.265, 0.27, 0.273, 0.275, ,
             0.275, 0.275, 0.275, 0.275, 0.275, 0.275, 0.275, 0.275]
-        let freqAl = [30, 25, 20, 15, 10.2, -9]
-        let kEnergyAl = [13.1, 9.7, 6.52, 3.21, 0, -14]
+        let freqAl = [30, 25, 20, 15, 10.2, 8.5, -9]
+        let kEnergyAl = [13.1, 9.7, 6.52, 3.21, 0, -1, -14]
 
         //button and html elements
         let waveButton = document.getElementById('wave');
@@ -155,7 +177,11 @@
             createLights();
 
             calCutoff();
-            calKenergy(params.wavelength);
+            calKenergy(200);
+            voltageX = wave200V;
+            currentY = wave200I;
+            current1Y = wave200I1;
+            current2Y = wave200I2;
             wavePoints()
             randomColor();
             const scaleHorizontal = new THREE.GridHelper(70, 70);
@@ -200,12 +226,12 @@
 
                     plotButton.innerHTML = "PLOT I-V"
                     canvasEnergy()
-                    console.log('KE plot')
+                    // console.log('KE plot')
 
                 } else {
                     canvasAction()
                     plotButton.innerHTML = "PLOT K<sub>max</sub>"
-                    console.log('I-V plot')
+                    // console.log('I-V plot')
                 }
 
             });
@@ -216,23 +242,42 @@
                 waveValue.innerHTML = Math.ceil(waveInput.value * 1e2);
                 let W = Math.ceil(waveInput.value * 1e2);
                 params.light = Math.floor(waveInput.value);
-
+                params.wavelength = Number(waveInput.value * 1e2).toFixed(0)
                 colLight = colorList[params.light];
                 cone.material.color = colLight
 
                 if (W <= params.waveCut) {
                     params.wave = (0.75 / (waveInput.value))
-                    console.log(W, params.waveCut, params.wave)
-
+                    // console.log(W, params.waveCut, params.wave)
+                    calKenergy(params.wavelength)
                 } else {
                     params.wave = 0
-                    console.log(W, params.waveCut, params.wave)
+                    params.stopV = "Not defined"
+                    // console.log(W, params.waveCut, params.wave)
                 }
 
                 if (!stop) {
                     voltageAction()
                 }
 
+                if (W < 180) {
+                    voltageX = wave100V
+                    currentY = wave100I;
+                    current1Y = wave100I1;
+                    current2Y = wave100I2;
+                    canvasAction()
+                } else if (W > params.waveCut) {
+                    voltageX = currentY = current1Y = current2Y = [];
+                    canvasAction()
+                    // console.log("no emission")
+                } else {
+                    voltageX = wave200V;
+                    currentY = wave200I;
+                    current1Y = wave200I1;
+                    current2Y = wave200I2;
+                    // console.log("200nm emission")
+                    canvasAction()
+                }
             });
 
             intensityInput.addEventListener("change", function () {
@@ -240,7 +285,7 @@
                 intensityValue.innerHTML = params.intensity * 10;
                 params.iValue = Number(intensityInput.value);
                 voltageAction()
-                console.log(params.intensity)
+                // console.log(params.intensity)
             });
 
             voltageInput.addEventListener("change", function () {
@@ -248,14 +293,9 @@
                 let X = voltageInput.value
                 voltageValue.innerHTML = X;
                 params.voltage = Number(X);
-                // if (params.voltage < params.workfn) {
-                //     params.wave = params.voltage
-                // } else {
-                //     params.wave = 1.25
-                // }
 
                 voltageAction()
-                console.log(params.voltage, params.wave)
+                // console.log(params.voltage, params.wave)
             });
         }
 
@@ -367,7 +407,7 @@
                 .easing(TWEEN.Easing.Cubic.Out)
                 .start()
 
-            console.log(A, params.intensity, params.iValue, 'Max Current full intensity')
+            // console.log(A, params.intensity, params.iValue, 'Max Current full intensity')
         }
 
         function voltageAction() {
@@ -395,7 +435,7 @@
                     .easing(TWEEN.Easing.Cubic.Out)
                     .start()
 
-                console.log('below CutOff, I = 0 mA')
+                // console.log('below CutOff, I = 0 mA')
 
             } else if (params.voltage >= params.workfn) {
                 while (group.children.length > 0) {
@@ -418,7 +458,7 @@
                         .start()
                 }, 500);
 
-                console.log('Max Value, I = Imax mA')
+                // console.log('Max Value, I = Imax mA')
 
 
             } else if (params.voltage > -params.workfn && params.voltage < params.workfn) {
@@ -442,7 +482,7 @@
                 }, 500);
 
                 waveAction();
-                console.log(A, params.iValue, 'above cutoff,but below -0.9 V, Varying I microA')
+                // console.log(A, params.iValue, 'above cutoff,but below -0.9 V, Varying I microA')
 
             }
 
@@ -451,18 +491,15 @@
         function calCutoff() {
 
             let x = (hc) / (params.workfn);  // cutfoff wavelength for aluminium
-            params.waveCut = Number((parseFloat(x)).toFixed(0));
+            params.waveCut = Number((x * 1e9).toFixed(0))
+            // console.log(x, params.waveCut, params.wave)
         }
 
         function calKenergy(A) {
 
-            let x = (hc) / A;
-            // let y = (x - params.workfn) * charge;
-            // let z = (speed / A) * 1e9
-            // params.kenergy = Number.parseFloat(z).toExponential(2);
-            // electronKE.innerHTML = (params.kenergy * 1e19).toFixed(2);
-            // freqValue.innerHTML = (z) * 1e-6;
-            // console.log(x, params.kenergy, params.freq)
+            let x = (hc) / (A * 1e-9);
+            let y = Number((x - params.workfn).toFixed(1));
+            params.stopV = y
         }
 
         function setupCanvasDrawing() {
@@ -544,7 +581,7 @@
 
             setupCanvasDrawing();
 
-            drawAxes(drawingContext, 80, 135, 70)
+            drawAxes(drawingContext, 80, 250, 70)
             listLabel(drawingContext, {
                 xlabel: "V (volts)",
                 ylabel: "I (mA)",
@@ -554,29 +591,26 @@
                 label2: "High Intensity",
                 col2: 'red',
 
-                label1Posx: halfWidth + 40,
-                label1Posy: 100,
-                label2Posx: halfWidth + 40,
+                label1Posx: maxWidth + 40,
+                label1Posy: 270,
+                label2Posx: maxWidth + 40,
                 label2Posy: 50,
-                xPos: 150,
+                xPos: 270,
                 yPos: 55,
                 x: 150,
                 y: 25,
                 length: 2
             });
             drawingContext.beginPath();
-            drawingContext.moveTo(100, 140);
-            drawingContext.lineTo(100, 130);
-            drawingContext.moveTo(60, 145);
-            drawingContext.lineTo(60, 130);
             drawingContext.stroke();
             drawingContext.font = "12px arial";
             drawingContext.fillStyle = "#000000";
-            drawingContext.fillText(params.workfn + ' V ', xAxis + 70, yAxis + 10);
-            drawingContext.fillText(-params.workfn + ' V ', xAxis + 10, yAxis + 10);
+            drawingContext.fillText(params.wavelength + ' nm', xAxis + 160, yAxis + 45);
+            drawingContext.fillText(-params.stopV + ' V ', xAxis + 15, yAxis + 25);
+            // console.log('till here')
 
             for (let i = 0; i < voltageX.length - 1; i++) {
-
+                plotGraph(drawingContext, xAxis + 60 + voltageX[i] * 5, yAxis - currentY[i] * 190, 3, 'blue', xAxis + 60 + voltageX[i + 1] * 5, yAxis - currentY[i + 1] * 190);
                 plotGraph(drawingContext, xAxis + 60 + voltageX[i] * 5, yAxis - current1Y[i] * 190, 3, 'red', xAxis + 60 + voltageX[i + 1] * 5, yAxis - current1Y[i + 1] * 190);
                 plotGraph(drawingContext, xAxis + 60 + voltageX[i] * 5, yAxis - current2Y[i] * 190, 3, 'green', xAxis + 60 + voltageX[i + 1] * 5, yAxis - current2Y[i + 1] * 190);
             }
@@ -586,7 +620,7 @@
         function canvasEnergy() {
 
             setupCanvasDrawing();
-            drawAxes(drawingContext, 90, 75, 70)
+            drawAxes(drawingContext, 90, 115, 70)
 
             listLabel(drawingContext, {
                 xlabel: "Freq (Hz)",
@@ -595,16 +629,16 @@
                 col1: 'green',
                 label1Posx: halfWidth + 70,
                 label1Posy: 60,
-                xPos: 100,
+                xPos: 135,
                 yPos: 55,
                 x: 150,
                 y: 20,
                 length: 5
             });
-            drawingContext.fillText(-4.20 + ' V ', xAxis + 10, yAxis + 10);
+            drawingContext.fillText(-4.20 + ' eV ', xAxis + 10, yAxis - 60);
             for (let i = 0; i < freqAl.length - 1; i++) {
 
-                plotGraph(drawingContext, xAxis + 100 + freqAl[i] * 4, yAxis - 60 - kEnergyAl[i] * 5, 3, 'green', xAxis + 100 + freqAl[i + 1] * 4, yAxis - 60 - kEnergyAl[i + 1] * 5);
+                plotGraph(drawingContext, xAxis + 100 + freqAl[i] * 4, yAxis - 60 - (kEnergyAl[i] + 20) * 5, 3, 'green', xAxis + 100 + freqAl[i + 1] * 4, yAxis - 60 - (kEnergyAl[i + 1] + 20) * 5);
             }
 
         }
