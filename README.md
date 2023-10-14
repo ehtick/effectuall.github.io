@@ -3,7 +3,7 @@ Content still in development. Any suggestion appreciated.
 
 
 
-[DONATE](https://www.paypal.com/donate?token=4m4PsRXdEwwnHtYT_INVbJkOAj5oMsFZtyOU0lzdo8Kzq0saB-eljih404FQLhdLyAvUptoidJA3eOMg)
+[DONATE](https://www.paypal.com/donate/?hosted_button_id=ZTQ5RKXFNFB26)
 
 
 https://effectuall.github.io/
