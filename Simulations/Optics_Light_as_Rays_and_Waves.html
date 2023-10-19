@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Light as Rays and Waves</title>
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <link rel="shortcut icon" href="../files/favicon_white.ico" media="(prefers-color-scheme: dark)" />
+    <link rel="shortcut icon" href="../files/favicon.ico" media="(prefers-color-scheme: light)" />
+    <link rel="stylesheet" type="text/css" href="../css/style-page.css">
+    <script async="" src="https://www.googletagmanager.com/gtag/js?id=G-7VWWT4ZKR6"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+
+        gtag('config', 'G-7VWWT4ZKR6');
+    </script>
+    <meta name="google-site-verification" content="mz0TRB59UNqdTxhwzmXmGdgVPh8pB4YqjuUr-aWNGIY">
+
+</head>
+
+
+<body>
+    <div id="container">
+        <div id="topmenu">
+            <div>Light as Rays and Waves</div>
+        </div>
+    </div>
+    <script type="module">
+        import * as THREE from '../build/three.module.js';
+        import { GLTFLoader } from '../jsm/loaders/GLTFLoader.js';
+        import { OrbitControls } from '../jsm/controls/OrbitControls.js';
+        import { GUI } from '../jsm/libs/lil-gui.module.min.js';
+        import { TWEEN } from '../jsm/libs/tween.module.min.js';
+        import { CSS2DRenderer, CSS2DObject } from '../jsm/renderers/CSS2DRenderer.js';
+
+        // //global variables
+        var camera, scene, labelRenderer, renderer, controls;
+        var fov, model;
+        // let objective, eyepiece;
+        let INTERSECTED;
+        let meshObjects = [];
+        let upSlit, downSlit, arrowUp, arrowDown, plane, requestSingle;
+        let Ray = false;
+        let raycaster;
+        let mouse = new THREE.Vector2();
+        let waveText = document.createElement('div');
+        waveText.className = 'labels';
+        waveText.innerHTML = "Light as Rays, &lambda; &#8810; d";
+
+        let waveLabel = new CSS2DObject(waveText);
+        const partEl = document.getElementById("part");
+        const describeEl = document.getElementById("describe");
+        let clock = new THREE.Clock();
+        const animations = {
+            slit: 20,
+            rays: function () {
+                Ray = !Ray
+                plane.visible = Ray
+                wave1()
+            },
+            plane: function () {
+                if (!Ray) {
+                    wave1()
+                } else {
+                    cancelAnimationFrame(requestSingle)
+
+                }
+
+
+            }
+        }
+        let center1 = new THREE.Vector3(-150, 0, 0);
+        init();
+        animate();
+
+        //camera set up and model loading
+        function init() {
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xbfd1e5);
+            createCamera(45, 20, 10, 120, new THREE.Vector3(0, 0, 0));
+
+            createLights();
+            createRenderer();
+            createControls(5, 20, -4.5);
+
+            const loader = new GLTFLoader();
+            loader
+                .setPath('./model/')
+                .load('barrier.glb', function (gltf) {
+                    model = gltf.scene;
+                    for (let i = 0; i < model.children.length; i++) {
+                        if (model.children[i].type != 'Object3D') {
+                            meshObjects.push(model.children[i])
+                        }
+                    }
+                    scene.add(model)
+                    upSlit = model.getObjectByName('Slit1')
+                    downSlit = model.getObjectByName('Slit2')
+                    arrowUp = model.getObjectByName('ArrowUp')
+                    arrowDown = model.getObjectByName('ArrowDown')
+                    upSlit.position.y = animations.slit
+                    downSlit.position.y = -animations.slit
+                    arrowUp.position.y = animations.slit
+                    arrowDown.position.y = -animations.slit
+                    // console.log(model,)
+                });
+
+
+            guiControls();
+            scene.add(waveLabel)
+            createPlane()
+            plane.visible = Ray
+            const scaleHorizontal = new THREE.GridHelper(1000, 10);
+            scene.add(scaleHorizontal);
+            raycaster = new THREE.Raycaster()
+            document.body.appendChild(renderer.domElement);
+            document.addEventListener('click', clickAction);
+            window.addEventListener('resize', onWindowResize);
+
+        }
+
+        function clickAction(event) {
+            // event.preventDefault();
+
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+
+
+        }
+
+        function createCamera(view, x, y, z, vector) {
+
+            fov = view;
+            const aspect = window.innerWidth / window.innerHeight;
+            const near = 0.1;
+            const far = 1500;
+
+            camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+
+            camera.position.set(x, y, z);
+            camera.lookAt(vector)
+            // camera.position.set(-10, 3, 40);
+        }
+
+        function createLights() {
+            const ambientLight = new THREE.HemisphereLight(0xddeeff, 0x202020, 2);
+            const mainLight = new THREE.DirectionalLight(0xffffff, 1);
+            scene.add(ambientLight);
+
+            mainLight.position.set(10, 10, 10);
+
+            scene.add(ambientLight, mainLight);
+        }
+
+        function createRenderer() {
+            // create the renderer
+            renderer = new THREE.WebGLRenderer({
+                antialias: true
+            });
+            renderer.alpha = true;
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            document.body.appendChild(renderer.domElement);
+
+            labelRenderer = new CSS2DRenderer();
+            labelRenderer.setSize(window.innerWidth, window.innerHeight);
+            labelRenderer.domElement.style.position = 'absolute';
+            labelRenderer.domElement.style.top = '0px';
+            labelRenderer.domElement.style.pointerEvents = 'none';
+            labelRenderer.domElement.style.color = 'yellow';
+            labelRenderer.domElement.style.fontSize = '42px';
+            container.appendChild(labelRenderer.domElement);
+
+        }
+
+        function createControls(x, y, z) {
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enablePan = true;
+            controls.enableZoom = true;
+            controls.target.set(x, y, z);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function addLabels(name) {
+
+            let text = document.createElement('div');
+            text.className = 'labelparts';
+            text.textContent = name;
+
+            let label = new CSS2DObject(text);
+            return label
+        }
+
+        function animate() {
+
+            requestAnimationFrame(animate);
+            controls.update();
+            TWEEN.update();
+            render();
+        }
+
+        function render() {
+            // camera.updateMatrixWorld();
+            raycaster.setFromCamera(mouse, camera);
+
+            let intersects = raycaster.intersectObjects(meshObjects);
+            // console.log( intersects  )
+            if (intersects.length > 0) {
+
+                INTERSECTED = intersects[0].object;
+                let a = INTERSECTED.parent.name;
+
+
+            }
+            renderer.render(scene, camera);
+            labelRenderer.render(scene, camera);
+        }
+
+        function guiControls() {
+            // dat.GUI
+
+            const gui = new GUI();
+            // let controlFolder = gui.addFolder("Control");
+            // controlFolder.add(controls.target, 'x', -100, 100);
+            // controlFolder.add(controls.target, 'y', -100, 100);
+            // controlFolder.add(controls.target, 'z', -100, 100);
+            // let cameraFolder = gui.addFolder("Camera");
+            // cameraFolder.add(camera.position, 'x', -100, 100);
+            // cameraFolder.add(camera.position, 'y', -100, 100);
+            // cameraFolder.add(camera.position, 'z', -100, 100);
+            gui.add(animations, 'slit', 0.05, 20, 0.001).name('Slit width').onChange((value) => {
+                animations.slit = value;
+                plane.visible = Ray = false
+                upSlit.position.y = animations.slit
+                downSlit.position.y = -animations.slit
+                if (animations.slit <= 5) {
+                    let a = 10
+                    plane.scale.set(a, a, a)
+
+                    let X = -0.5 + (animations.slit) / 10
+                    // circularPoints(1)
+                    center1 = new THREE.Vector3(-animations.slit - 0.05, 0, 0);
+                    arrowDown.position.y = -animations.slit
+                    arrowDown.rotation.z = X
+                    arrowUp.position.y = animations.slit
+                    arrowUp.rotation.z = -X
+                    waveText.innerHTML = "Light as Waves, &lambda; &#8909; d";
+                } else {
+                    center1 = new THREE.Vector3(-150, 0, 0);
+                    arrowDown.position.y = -animations.slit
+                    arrowUp.position.y = animations.slit
+                    arrowDown.rotation.z = 0
+                    arrowUp.rotation.z = 0
+                    waveText.innerHTML = "Light as Rays, &lambda; &#8810; d";
+                }
+                // console.log('slit move', 1 / (2 * animations.slit), arrowUp.rotation.z, arrowDown.rotation.z)
+            });
+            // gui.add(animations, 'labels').name('Show/Hide Labels'); 0.5 to 0
+            gui.add(animations, 'rays').name('Show/Hide wavefront');
+
+        }
+
+
+        function createPlane() {
+            let planeGeometry = new THREE.PlaneBufferGeometry(20, 10, 100, 50).translate(10, 0, 0);
+            let planeMaterial = new THREE.MeshPhongMaterial({
+                color: 0xEF3523
+            });
+            plane = new THREE.Mesh(planeGeometry, planeMaterial);
+            plane.geometry.dynamic = true;
+            plane.position.x = 1.5
+            scene.add(plane);
+            let a = 10
+            plane.scale.set(a, a, a)
+        }
+
+        function wave1() {
+
+            // console.log('here')
+            let vLength = plane.geometry.attributes.position.count;
+            let t = clock.getElapsedTime();
+            for (let i = 0; i < vLength; i++) {
+                const vx = plane.geometry.attributes.position.getX(i);
+                const vy = plane.geometry.attributes.position.getY(i);
+                const vz = plane.geometry.attributes.position.getZ(i);
+                let dist1 = new THREE.Vector3(vx, vy, vz).sub(center1);
+
+                let size = 5; //5
+                let magnitude = 0.3;//4
+
+                let xsin1 = Math.sin(3 * t - dist1.length() * size) * magnitude;
+
+                plane.geometry.attributes.position.setZ(i, xsin1);
+            }
+            plane.geometry.computeVertexNormals();
+            plane.geometry.attributes.position.needsUpdate = true;
+
+            requestSingle = requestAnimationFrame(wave1);
+
+
+        }
+
+        function circularPoints(angle) {
+            let drawCount1 = 9000;// 6530 * 3;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(drawCount1); // 3 vertices per point
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+            let i = 0;
+            let x, y, z, index;
+
+            index = 0;
+            z = 0;
+            // updateBlues();
+            for (let j = 0.1, l = 10; j < l; j = j + 0.5) {
+                for (let i = -angle, h = angle; i <= h; i = i + h / (j * 8 * angle)) {
+
+                    // for (let i = -1.57, h = 1.57; i <= h; i = i + h / (j * 16 * 1.57)) {
+                    y = 20 * j * Math.sin(i)
+                    z = 0;
+                    x = 20 * j * Math.cos(i)
+                    positions[index++] = x;
+                    positions[index++] = y;
+                    positions[index++] = z;
+
+                }
+                // drawCount1 = (drawCount1 + 1);
+            }
+            // console.log(positions)
+            const material = new THREE.PointsMaterial({ size: 5, color: 0x0000ff });
+
+            let bluePoints = new THREE.Points(geometry, material);
+            scene.add(bluePoints);
+            bluePoints.geometry.setDrawRange(0, drawCount1)
+        }
+    </script>
+</body>
+
+</html>
