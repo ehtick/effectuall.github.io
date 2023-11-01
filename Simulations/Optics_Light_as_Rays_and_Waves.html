@@ -26,31 +26,23 @@
         <div id="topmenu">
             <div>Light as Rays and Waves</div>
         </div>
+        <div id="sidemenu">
+            Light as Rays, &lambda; &#8810; d
+        </div>
     </div>
     <script type="module">
         import * as THREE from '../build/three.module.js';
         import { GLTFLoader } from '../jsm/loaders/GLTFLoader.js';
         import { OrbitControls } from '../jsm/controls/OrbitControls.js';
         import { GUI } from '../jsm/libs/lil-gui.module.min.js';
-        import { TWEEN } from '../jsm/libs/tween.module.min.js';
-        import { CSS2DRenderer, CSS2DObject } from '../jsm/renderers/CSS2DRenderer.js';
 
         // //global variables
-        var camera, scene, labelRenderer, renderer, controls;
+        var camera, scene, renderer, controls;
         var fov, model;
-        // let objective, eyepiece;
-        let INTERSECTED;
-        let meshObjects = [];
         let upSlit, downSlit, arrowUp, arrowDown, plane, requestSingle;
         let Ray = false;
-        let raycaster;
-        let mouse = new THREE.Vector2();
-        let waveText = document.createElement('div');
-        waveText.className = 'labels';
-        waveText.innerHTML = "Light as Rays, &lambda; &#8810; d";
 
-        let waveLabel = new CSS2DObject(waveText);
-        const partEl = document.getElementById("part");
+        const menuEl = document.getElementById("sidemenu");
         const describeEl = document.getElementById("describe");
         let clock = new THREE.Clock();
         const animations = {
@@ -59,16 +51,6 @@
                 Ray = !Ray
                 plane.visible = Ray
                 wave1()
-            },
-            plane: function () {
-                if (!Ray) {
-                    wave1()
-                } else {
-                    cancelAnimationFrame(requestSingle)
-
-                }
-
-
             }
         }
         let center1 = new THREE.Vector3(-150, 0, 0);
@@ -80,22 +62,18 @@
 
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0xbfd1e5);
-            createCamera(45, 20, 10, 120, new THREE.Vector3(0, 0, 0));
+            createCamera(45, 75, 10, 200, new THREE.Vector3(0, 0, 0));
 
             createLights();
             createRenderer();
-            createControls(5, 20, -4.5);
+            createControls(5, 0, 30);
 
             const loader = new GLTFLoader();
             loader
                 .setPath('./model/')
                 .load('barrier.glb', function (gltf) {
                     model = gltf.scene;
-                    for (let i = 0; i < model.children.length; i++) {
-                        if (model.children[i].type != 'Object3D') {
-                            meshObjects.push(model.children[i])
-                        }
-                    }
+
                     scene.add(model)
                     upSlit = model.getObjectByName('Slit1')
                     downSlit = model.getObjectByName('Slit2')
@@ -103,33 +81,24 @@
                     arrowDown = model.getObjectByName('ArrowDown')
                     upSlit.position.y = animations.slit
                     downSlit.position.y = -animations.slit
-                    arrowUp.position.y = animations.slit
-                    arrowDown.position.y = -animations.slit
+                    arrowUp.position.y = animations.slit / 2
+                    arrowDown.position.y = -animations.slit / 2
                     // console.log(model,)
                 });
 
 
             guiControls();
-            scene.add(waveLabel)
             createPlane()
             plane.visible = Ray
             const scaleHorizontal = new THREE.GridHelper(1000, 10);
             scene.add(scaleHorizontal);
-            raycaster = new THREE.Raycaster()
+
             document.body.appendChild(renderer.domElement);
-            document.addEventListener('click', clickAction);
             window.addEventListener('resize', onWindowResize);
 
         }
 
-        function clickAction(event) {
-            // event.preventDefault();
 
-            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
-
-
-        }
 
         function createCamera(view, x, y, z, vector) {
 
@@ -165,15 +134,6 @@
             renderer.setPixelRatio(window.devicePixelRatio);
             document.body.appendChild(renderer.domElement);
 
-            labelRenderer = new CSS2DRenderer();
-            labelRenderer.setSize(window.innerWidth, window.innerHeight);
-            labelRenderer.domElement.style.position = 'absolute';
-            labelRenderer.domElement.style.top = '0px';
-            labelRenderer.domElement.style.pointerEvents = 'none';
-            labelRenderer.domElement.style.color = 'yellow';
-            labelRenderer.domElement.style.fontSize = '42px';
-            container.appendChild(labelRenderer.domElement);
-
         }
 
         function createControls(x, y, z) {
@@ -190,39 +150,16 @@
             labelRenderer.setSize(window.innerWidth, window.innerHeight);
         }
 
-        function addLabels(name) {
-
-            let text = document.createElement('div');
-            text.className = 'labelparts';
-            text.textContent = name;
-
-            let label = new CSS2DObject(text);
-            return label
-        }
-
         function animate() {
 
             requestAnimationFrame(animate);
             controls.update();
-            TWEEN.update();
             render();
         }
 
         function render() {
-            // camera.updateMatrixWorld();
-            raycaster.setFromCamera(mouse, camera);
 
-            let intersects = raycaster.intersectObjects(meshObjects);
-            // console.log( intersects  )
-            if (intersects.length > 0) {
-
-                INTERSECTED = intersects[0].object;
-                let a = INTERSECTED.parent.name;
-
-
-            }
             renderer.render(scene, camera);
-            labelRenderer.render(scene, camera);
         }
 
         function guiControls() {
@@ -236,7 +173,7 @@
             // let cameraFolder = gui.addFolder("Camera");
             // cameraFolder.add(camera.position, 'x', -100, 100);
             // cameraFolder.add(camera.position, 'y', -100, 100);
-            // cameraFolder.add(camera.position, 'z', -100, 100);
+            // cameraFolder.add(camera.position, 'z', -100, 500);
             gui.add(animations, 'slit', 0.05, 20, 0.001).name('Slit width').onChange((value) => {
                 animations.slit = value;
                 plane.visible = Ray = false
@@ -253,14 +190,14 @@
                     arrowDown.rotation.z = X
                     arrowUp.position.y = animations.slit
                     arrowUp.rotation.z = -X
-                    waveText.innerHTML = "Light as Waves, &lambda; &#8909; d";
+                    menuEl.innerHTML = "Light as Waves, &lambda; &#8909; d";
                 } else {
                     center1 = new THREE.Vector3(-150, 0, 0);
-                    arrowDown.position.y = -animations.slit
-                    arrowUp.position.y = animations.slit
+                    arrowDown.position.y = -animations.slit / 2
+                    arrowUp.position.y = animations.slit / 2
                     arrowDown.rotation.z = 0
                     arrowUp.rotation.z = 0
-                    waveText.innerHTML = "Light as Rays, &lambda; &#8810; d";
+                    menuEl.innerHTML = "Light as Rays, &lambda; &#8810; d";
                 }
                 // console.log('slit move', 1 / (2 * animations.slit), arrowUp.rotation.z, arrowDown.rotation.z)
             });
@@ -309,39 +246,6 @@
 
         }
 
-        function circularPoints(angle) {
-            let drawCount1 = 9000;// 6530 * 3;
-            const geometry = new THREE.BufferGeometry();
-            const positions = new Float32Array(drawCount1); // 3 vertices per point
-            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-
-            let i = 0;
-            let x, y, z, index;
-
-            index = 0;
-            z = 0;
-            // updateBlues();
-            for (let j = 0.1, l = 10; j < l; j = j + 0.5) {
-                for (let i = -angle, h = angle; i <= h; i = i + h / (j * 8 * angle)) {
-
-                    // for (let i = -1.57, h = 1.57; i <= h; i = i + h / (j * 16 * 1.57)) {
-                    y = 20 * j * Math.sin(i)
-                    z = 0;
-                    x = 20 * j * Math.cos(i)
-                    positions[index++] = x;
-                    positions[index++] = y;
-                    positions[index++] = z;
-
-                }
-                // drawCount1 = (drawCount1 + 1);
-            }
-            // console.log(positions)
-            const material = new THREE.PointsMaterial({ size: 5, color: 0x0000ff });
-
-            let bluePoints = new THREE.Points(geometry, material);
-            scene.add(bluePoints);
-            bluePoints.geometry.setDrawRange(0, drawCount1)
-        }
     </script>
 </body>
 
