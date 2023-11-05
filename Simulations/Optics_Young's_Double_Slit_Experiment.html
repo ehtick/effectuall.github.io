@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Young's Double Slit Experiment</title>
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <link rel="shortcut icon" href="../files/favicon_white.ico" media="(prefers-color-scheme: dark)" />
+    <link rel="shortcut icon" href="../files/favicon.ico" media="(prefers-color-scheme: light)" />
+    <link rel="stylesheet" type="text/css" href="../css/style-page.css">
+    <script async="" src="https://www.googletagmanager.com/gtag/js?id=G-7VWWT4ZKR6"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+
+        gtag('config', 'G-7VWWT4ZKR6');
+    </script>
+    <meta name="google-site-verification" content="mz0TRB59UNqdTxhwzmXmGdgVPh8pB4YqjuUr-aWNGIY">
+
+</head>
+
+
+<body>
+    <div id="container">
+        <div style="color: beige;" id="topmenu">
+            <div>Young's Double Slit Experiment</div>
+        </div>
+        <div id="sidemenu">
+            <p style="color: beige;"> Wavelength of light, &lambda; = <a style="color: cornsilk;" id="waveDisplay">560
+                </a>nm </p>
+            <p style="color: beige;"><label for="dist">Distance between the slits, d = </label><a id="distDisplay"> 1
+                </a>
+                mm<br>
+                <input type="range" id="dist" name="dist" min="0" max="1" value="0" step="0.1">
+            </p><br>
+            <p style="color: beige;"><label for="length">Slits and the screen, L = </label><a id="lengthDisplay">
+                    1
+                </a>
+                m<br>
+                <input type="range" id="length" name="length" min="0" max="1" value="0" step="0.1">
+            </p>
+        </div>
+        <div style="background-color: beige; text-align: center; margin: -5px;" id="menu">
+            y<sub><em>bright</em></sub>
+            =
+            <div class="fraction">
+                <span class="fup">&lambda;<sub>red</sub> L</span>
+                <span class="bar">/</span>
+                <span class="fdn">d</span>
+            </div> = <a id="calDisplay"> </a> mm<br>
+        </div>
+    </div>
+    <canvas style="visibility: hidden;" id="drawing-canvas" height="300" width="300"></canvas>
+    <!-- style="visibility: hidden;"  -->
+    <script type="module">
+        import * as THREE from '../build/three.module.js';
+        import { GLTFLoader } from '../jsm/loaders/GLTFLoader.js';
+        import { OrbitControls } from '../jsm/controls/OrbitControls.js';
+        import { GUI } from '../jsm/libs/lil-gui.module.min.js';
+
+        // //global variables
+        var camera, scene, renderer, controls;
+        var fov, model, cube;
+        let plane1, plane2, material, requestSingle;
+        let Ray = false;
+        let points = [];
+        let group = new THREE.Group()
+        let lines = new THREE.Group()
+        const menuEl = document.getElementById("sidemenu");
+        const lengthInput = document.getElementById("length");
+        const lengthEl = document.getElementById("lengthDisplay");
+        const distInput = document.getElementById("dist");
+        const distEl = document.getElementById("distDisplay");
+        const calEl = document.getElementById("calDisplay");
+        let clock = new THREE.Clock();
+        const animations = {
+            slit: 20,
+            rays: function () {
+                Ray = !Ray
+                plane.visible = Ray
+                wave1()
+            }
+        }
+        let params = {
+            length: 0, //1.3 m 0-0.8
+            vLength: 50, //16
+            wave: 560,
+            spacing: 0, //0-0.8 mm 1-0.2mm
+            vspacing: 1.7, //2
+            pos: 3,
+            fringe: 1
+        }
+
+        let center1 = new THREE.Vector3(-150, 0, 0);
+        distEl.innerText = params.vspacing
+        distInput.innerText = params.spacing
+        lengthEl.innerText = params.vLength
+        lengthInput.innerText = params.length
+        init();
+        animate();
+
+        //camera set up and model loading
+        function init() {
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x020125);
+            createCamera(45, -25, 12, 25, new THREE.Vector3(0, 0, 0));
+            const spotLight = new THREE.SpotLight(0xff0000, 30);
+            spotLight.position.set(-10, 0, 0);
+            spotLight.angle = Math.PI / 12;
+            spotLight.penumbra = 0.2;
+            spotLight.decay = 20;
+            spotLight.distance = 5;
+            spotLight.castShadow = true;
+
+            // spotLight.shadow.mapSize.width = 1024;
+            // spotLight.shadow.mapSize.height = 1024;
+
+            // spotLight.shadow.camera.near = 500;
+            // spotLight.shadow.camera.far = 4000;
+            // spotLight.shadow.camera.fov = 30;
+            let L = spotLight.clone()
+            L.distance = 50;
+            scene.add(spotLight, L);
+            // scene.add(spotLight.target)
+            let lightHelper = new THREE.SpotLightHelper(spotLight)
+            scene.add(lightHelper)
+            createLights();
+            createRenderer();
+            createControls(0, 1, 0);
+            createFringe(1)
+            material = new THREE.MeshBasicMaterial({
+                color: 0xEF3523,
+                side: THREE.DoubleSide
+            });
+            const loader = new GLTFLoader();
+            loader
+                .setPath('./model/')
+                .load('doubleSlit.glb', function (gltf) {
+                    model = gltf.scene;
+
+                    // scene.add(model)
+                    cube = gltf.scene.getObjectByName('Cube');
+                    plane1 = gltf.scene.getObjectByName('Plane');
+                    plane2 = gltf.scene.getObjectByName('PlaneA');
+                    cube.morphTargetInfluences[0] = params.spacing;
+                    cube.morphTargetInfluences[1] = params.length;
+                    plane1.morphTargetInfluences[1] = params.length;
+                    plane2.morphTargetInfluences[1] = params.length;
+                    plane1.material = material
+                    plane2.material = material
+                    group.add(model)
+
+                });
+            scene.add(group, lines)
+            group.position.y = -2.2
+            // guiControls();
+            setupCanvasDrawing() //0.1
+            scene.add(addLines(new THREE.Vector3(-5, 0, 0), new THREE.Vector3(-3.3, 0, 0)),
+                addLines(new THREE.Vector3(-5, 1, 0), new THREE.Vector3(-3.3, 1, 0)),
+                addLines(new THREE.Vector3(-5, -1, 0), new THREE.Vector3(-3.3, -1, 0)),
+                addLines(new THREE.Vector3(-5, 0, 1), new THREE.Vector3(-3.3, 0, 1)),
+                addLines(new THREE.Vector3(-5, 0, -1), new THREE.Vector3(-3.3, 0, -1)))
+
+
+            const scaleHorizontal = new THREE.GridHelper(20, 20);
+            scaleHorizontal.position.y = -2 - 0.05;
+            scene.add(scaleHorizontal);
+            inputAction()
+            document.body.appendChild(renderer.domElement);
+            window.addEventListener('resize', onWindowResize);
+
+        }
+
+        function createFringe(n) {
+            let A = calFringe(n)
+            params.fringe = A
+            calEl.innerHTML = params.fringe.toFixed(2)
+            // console.log(A, params.fringe)
+            while (lines.children.length > 0) {
+                const A = lines.children[0];
+                A.parent.remove(A);
+            }
+            lines.add(addLines(new THREE.Vector3(-3, 0, params.vspacing), new THREE.Vector3(params.pos, 0, A)),
+                addLines(new THREE.Vector3(-3, 0, -params.vspacing), new THREE.Vector3(params.pos, 0, A)),
+
+                addLines(new THREE.Vector3(-3, 0, params.vspacing), new THREE.Vector3(params.pos, 0, -A)),
+                addLines(new THREE.Vector3(-3, 0, -params.vspacing), new THREE.Vector3(params.pos, 0, -A)),
+
+                addLines(new THREE.Vector3(params.pos, 2, 0), new THREE.Vector3(params.pos, -2, 0))
+            )
+        }
+
+        function createSpotlight(color) {
+
+            const newObj = new THREE.SpotLight(color, 10);
+
+            newObj.castShadow = true;
+            newObj.angle = 0.6;
+            newObj.penumbra = 5;
+            newObj.decay = 9;
+            newObj.distance = 10;
+
+            return newObj;
+
+        }
+
+        function createCamera(view, x, y, z, vector) {
+
+            fov = view;
+            const aspect = window.innerWidth / window.innerHeight;
+            const near = 0.1;
+            const far = 1500;
+
+            camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+
+            camera.position.set(x, y, z);
+            camera.lookAt(vector)
+            // camera.position.set(-10, 3, 40);
+        }
+
+        function createLights() {
+            const ambientLight = new THREE.HemisphereLight(0xddeeff, 0x202020, 2);
+            const mainLight = new THREE.DirectionalLight(0xffffff, 1);
+            scene.add(ambientLight);
+
+            mainLight.position.set(10, 10, 10);
+
+            scene.add(ambientLight, mainLight);
+        }
+
+        function createRenderer() {
+            // create the renderer
+            renderer = new THREE.WebGLRenderer({
+                antialias: true
+            });
+            renderer.alpha = true;
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            document.body.appendChild(renderer.domElement);
+
+        }
+
+        function createControls(x, y, z) {
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enablePan = true;
+            controls.enableZoom = true;
+            controls.target.set(x, y, z);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            // labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+
+            requestAnimationFrame(animate);
+            controls.update();
+            render();
+        }
+
+        function render() {
+
+            renderer.render(scene, camera);
+        }
+
+        function guiControls() {
+            // dat.GUI
+
+            const gui = new GUI();
+            let controlFolder = gui.addFolder("Control");
+            controlFolder.add(controls.target, 'x', -100, 100);
+            controlFolder.add(controls.target, 'y', -100, 100);
+            controlFolder.add(controls.target, 'z', -100, 100);
+            let cameraFolder = gui.addFolder("Camera");
+            cameraFolder.add(camera.position, 'x', -100, 100);
+            cameraFolder.add(camera.position, 'y', -100, 100);
+            cameraFolder.add(camera.position, 'z', -100, 500);
+
+            gui.add(params, 'length', 0, 1, 0.05).name('Screen Distance').onChange((value) => {
+                params.length = value
+                params.vLength = 50 + value * 50
+                params.pos = 3 + value * 4//for lines
+                // params.vLength = 16 + value * 10 //for canvas
+                cube.morphTargetInfluences[1] = params.length;
+                plane1.morphTargetInfluences[1] = params.length;
+                plane2.morphTargetInfluences[1] = params.length;
+                setupCanvasDrawing()
+                // console.log('screen move', params.length, params.vLength, params.pos)
+                createFringe(1)
+            });
+            gui.add(params, 'spacing', 0, 1, 0.1).name('Slit Distance').onChange((value) => {
+                params.spacing = value
+                params.vspacing = 1.7 - value - 0.3 * value * value//for lines
+                // params.vspacing = 16 / (6 * value + 2) //for canvas
+                cube.morphTargetInfluences[0] = params.spacing;
+                setupCanvasDrawing()
+
+                console.log('slit move', params.spacing, params.vspacing)
+                createFringe(1)
+            });
+        }
+
+        function setupCanvasDrawing() {
+
+            const drawingCanvas = document.getElementById('drawing-canvas');
+            const ctx = drawingCanvas.getContext('2d');
+
+            // draw white background
+            ctx.clearRect(0, 0, 300, 300);
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, 300, 300);
+            material.map = new THREE.CanvasTexture(drawingCanvas);
+            const gradient = ctx.createLinearGradient(0, 0, 300, 0);
+
+            // let a = calFringe(0.5)
+            let a = params.fringe / 4
+            let b = params.fringe
+            let N = params.vspacing > 2.5 ? 8 : 30;
+            // console.log(a)
+            gradient.addColorStop(0, "#e61212");
+            for (let i = 0; i < N; i = i + 1) {
+                if ((i + 0.5) * a > 1) {
+                    break
+
+                }
+                else {
+                    gradient.addColorStop(i * a, "#b81818");
+                    gradient.addColorStop((i + 0.5) * a, "black");
+                    ctx.fillStyle = gradient;
+                    ctx.fillRect(0, 0, 300, 300);
+                    material.map.needsUpdate = true;
+                }
+
+            }
+
+        }
+
+        function addLines(vector1, vector2) {
+            let linepoints = [vector1, vector2];
+            let lineMaterial = new THREE.LineBasicMaterial({ color: 'red' });
+
+            let lineGeometry = new THREE.BufferGeometry().setFromPoints(linepoints);
+            let axis = new THREE.Line(lineGeometry, lineMaterial);
+
+            return axis
+        }
+
+        function createPlane() {
+            let planeGeometry = new THREE.PlaneGeometry(2, 4).rotateY(-1.57).translate(0, 2, 1);
+            material = new THREE.MeshBasicMaterial({
+                color: 0xEF3523,
+                side: THREE.DoubleSide
+            });
+            let plane = new THREE.Mesh(planeGeometry, material);
+            plane.position.x = 5//for Length = 1, x = 7 and Length = 0.005, x = 3, Length = 0.1, x = 3.38
+            plane.position.z = 0
+            // scene.add(plane);
+            plane.scale.z = 2
+            let X = plane.clone()
+            scene.add(X)
+            X.rotation.y = 3.14
+            X.position.z = 0
+            return plane
+        }
+
+        function calFringe(n) {
+            let bright = (params.wave * 1e-9 * params.vLength * n) / (params.vspacing * 1e-4)
+            return bright
+        }
+        let P = new THREE.Vector3(0, 0, 0)
+        function waveLine() {
+
+            for (let i = 0; i < 20; i++) {
+                let p = 20 * sin(i)
+                P = new THREE.Vector3(i, p, 0)
+                points.push(P)
+                scene.add(addLines(P, new THREE.Vector3(i, p, 0)))
+            }
+        }
+
+        function inputAction() {
+            // console.log("Inputactions")
+            distInput.addEventListener('input', function () {
+                let X = Number(distInput.value);
+
+                params.spacing = X
+                params.vspacing = 1.7 - X - 0.3 * X * X//for lines
+                distEl.innerText = (params.vspacing).toFixed(3)
+                // params.vspacing = 16 / (6 * value + 2) //for canvas
+                cube.morphTargetInfluences[0] = params.spacing;
+                setupCanvasDrawing()
+
+                // console.log(X, params.spacing, params.vspacing)
+                createFringe(1)
+            });
+
+            lengthInput.addEventListener('input', function () {
+                let X = Number(lengthInput.value);
+
+                params.length = X
+                params.vLength = 50 + X * 50
+                params.pos = 3 + X * 4
+                lengthEl.innerText = (params.vLength).toFixed(1)
+                // params.vspacing = 16 / (6 * value + 2) //for canvas
+                cube.morphTargetInfluences[1] = params.length;
+                plane1.morphTargetInfluences[1] = params.length;
+                plane2.morphTargetInfluences[1] = params.length;
+                setupCanvasDrawing()
+
+                // console.log(X, params.spacing, params.vspacing)
+                createFringe(1)
+            });
+        }
+    </script>
+</body>
+
+</html>
