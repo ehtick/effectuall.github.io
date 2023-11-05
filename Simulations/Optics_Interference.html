@@ -3,20 +3,19 @@
 
 <head>
     <meta charset="utf-8">
-    <title>Wave Interference</title>
+    <title>Interactive 3D Wave Interference</title>
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
     <link rel="shortcut icon" href="../files/favicon_white.ico" media="(prefers-color-scheme: dark)" />
     <link rel="shortcut icon" href="../files/favicon.ico" media="(prefers-color-scheme: light)" />
     <link rel="stylesheet" type="text/css" href="../css/style-page.css">
-    <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-0JWHY29KD2"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+    <script async="" src="https://www.googletagmanager.com/gtag/js?id=G-7VWWT4ZKR6"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
 
-  gtag('config', 'G-0JWHY29KD2');
-</script>
+        gtag('config', 'G-7VWWT4ZKR6');
+    </script>
     <meta name="google-site-verification" content="mz0TRB59UNqdTxhwzmXmGdgVPh8pB4YqjuUr-aWNGIY">
 
 </head>
@@ -26,94 +25,74 @@
 
     <div id="container">
         <div id="topmenu">
-            <div>Wave Interference</div>
+            <div>Interactive 3D Wave Interference</div>
 
         </div>
+        <div id="menu">
+            <label for="damp">Damping Factor </label><br>
+            <a><input type="range" id="damp" name="damp" min="0" max="0.5" value="0.1" step="0.01">
+
+            </a><br>
+            <label for="wave">Wave Number = </label> <a id="waveDisplay"> 2 </a> cm<sup>-1</sup><br>
+            <a><input type="range" id="wave" name="wave" min="1" max="8" value="2" step="1">
+
+            </a><br>
+
+            <label for="focal">Distance between the two sources = </label><a id="distDisplay"> 2 </a> cm<br>
+            <a><input type="range" id="dist" name="dist" min="1" max="8" value="2" step="1">
+
+            </a><br>
+
+            <button id="action">INTERFERENCE</button>
+            <button id="reset">RESET</button>
+            <br>
+        </div>
     </div>
-
-
-
-    <div id="menu">
-        <button id="menuButton">INTERFERENCE</button>
-        <button id="theorybutton">THEORY</button>
-        <br>
-    </div>
-
-
     <script type="module">
         import * as THREE from '../build/three.module.js';
         import { GLTFLoader } from '../jsm/loaders/GLTFLoader.js';
         import { OrbitControls } from '../jsm/controls/OrbitControls.js';
-        import { TWEEN } from '../jsm/libs/tween.module.min.js';
         import { GUI } from '../jsm/libs/lil-gui.module.min.js';
 
 
-        let camera, scene, labelRenderer, renderer, controls;
+        let camera, scene, renderer, controls;
         let fov, gui, delta;
-        let plane, box;
+        let plane;
+        let stop = false;
+        let pointSin = [], pointCos = [], PHOTON = [];
+        let LINES = new THREE.Group();
+        let group = new THREE.Group();
+        let requestID, requestSingle;
         let modelReady = false;
+        const pi = Math.PI;
         let clock = new THREE.Clock();
+        let actionButton = document.getElementById('action');
+        let resetButton = document.getElementById('reset');
+        let waveInput = document.getElementById('wave');
+        let waveEl = document.getElementById('waveDisplay');
+        let distInput = document.getElementById('dist');
+        let distEl = document.getElementById('distDisplay');
+        let dampInput = document.getElementById('damp');
+        let params = {
+            pos: -12, //the source point
+            d: 2, //max 5 Distance between the two source
+            L: 15,
+            size: 2, //max 8 min 2 Wavelength small size long wavelength
+            mag: 0.3,// 0.2  0.6 Amplitude
+            point: 1, // 5 2
+            freq: 1, // 10 3
+            damp: 0.01
+        }
         window.onload = function () {
 
             init();
             // guiControls();
+            scene.add(LINES)
+            addPath()
             animate();
-            wave1()
-
+            wave()
+            buttonAction()
         }
-        let mouse = new THREE.Vector3();
-        let raycaster = new THREE.Raycaster();
-
-        function checkMousePos() {
-
-            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-            raycaster.setFromCamera(mouse, camera);
-            let intersects = raycaster.intersectObjects(scene.children);
-            console.log(intersects.length);
-            if (intersects.length > 0) {
-                let wave = {};
-                wave.x = intersects[0].point.x;
-                wave.y = intersects[0].point.y;
-                wave.z = intersects[0].point.z;
-
-                drawWave(wave);
-            }
-        };
-
-        function drawWave(wave) {
-
-            let center = new THREE.Vector3(wave.x, wave.y, wave.z);
-
-            function anim() {
-
-                requestAnimationFrame(anim);
-
-                let vLength = plane.geometry.attributes.position.count;
-                let t = clock.getElapsedTime();
-                for (let i = 0; i < vLength; i++) {
-                    const vx = plane.geometry.attributes.position.getX(i);
-                    const vy = plane.geometry.attributes.position.getY(i);
-                    const vz = plane.geometry.attributes.position.getZ(i);
-
-                    let dist = new THREE.Vector3(vx, vy, vz).sub(center);
-
-                    let size = 6; //5
-                    let magnitude = 0.2;//4
-
-                    let xsin = Math.sin(3 * t - dist.length() * size) * magnitude;
-
-                    //   v.z = Math.sin(dist.length() / -size + (ts / 500)) * magnitude;
-                    plane.geometry.attributes.position.setZ(i, xsin);
-
-
-                }
-                plane.geometry.computeVertexNormals();
-                plane.geometry.attributes.position.needsUpdate = true;
-                renderer.render(scene, camera);
-            }
-            anim();
-        };
 
         function animate() {
             requestAnimationFrame(animate);
@@ -121,9 +100,74 @@
             renderer.render(scene, camera);
         };
 
+        function buttonAction() {
+            actionButton.addEventListener("click", function (event) {
+                stop = !stop;
+                actionButton.style.backgroundColor = 'rgb(243, 44, 87)';
+                cancelAnimationFrame(requestID)
+
+
+            });
+
+            resetButton.addEventListener("click", function (event) {
+                // stop = false;
+                // cancelAnimationFrame(requestSingle)
+                // cancelAnimationFrame(requestID)
+                params.d = 2
+                params.size = 2
+                params.damp = 0.01
+                waveInput.valueAsNumber = params.size
+                waveEl.innerText = params.size
+                distInput.valueAsNumber = params.d
+                distEl.innerText = params.d
+                dampInput.valueAsNumber = params.damp
+                let a = 5 / (params.d) + 20 / (params.size)
+                addRef(a)
+            });
+            waveInput.addEventListener("click", function (event) {
+                params.size = waveInput.valueAsNumber
+                params.mag = 1.2 / params.size
+                waveEl.innerText = params.size
+                let a = 0
+                if (params.d <= 2) {
+                    a = 20 / (params.size)
+                } else if (params.d > 6) {
+                    a = 0.7 * params.d / (params.size)
+                } else {
+                    a = (1.6 + params.d) / (params.size)
+                }
+                // console.log(params.d, a)
+                addRef(a)
+            });
+
+            distInput.addEventListener("click", function (event) {
+                params.d = distInput.valueAsNumber
+                distEl.innerText = params.d
+                let a = 5 / (params.d) + 0.015 * params.size
+                addRef(a)
+            });
+
+            dampInput.addEventListener("click", function (event) {
+                params.damp = dampInput.valueAsNumber
+            });
+        }
+
+
+        function stopAction() {
+            if (stop) {
+                setTimeout(function () {
+                    actionButton.style.backgroundColor = 'rgb(3, 108, 156)';
+                    wave();
+                }, 500)
+            } else if (!stop) {
+                cancelAnimationFrame(requestID)
+            }
+        }
+
         function wave() {
-            let center1 = box.position;
-            let center2 = new THREE.Vector3(-8, -2.5, 0);
+
+            let center1 = new THREE.Vector3(params.pos, params.d, 0);
+            let center2 = new THREE.Vector3(params.pos, -params.d, 0);
             let vLength = plane.geometry.attributes.position.count;
             let t = clock.getElapsedTime();
             for (let i = 0; i < vLength; i++) {
@@ -132,101 +176,75 @@
                 const vz = plane.geometry.attributes.position.getZ(i);
                 let dist1 = new THREE.Vector3(vx, vy, vz).sub(center1);
                 let dist2 = new THREE.Vector3(vx, vy, vz).sub(center2);
-                let size = 6; //5
-                let magnitude = 0.2;//4
+                let size = params.size; //5
+                let magnitude = params.mag;//4
 
-                let xsin1 = Math.sin(3 * t - dist1.length() * size) * magnitude;
-                let xsin2 = Math.sin(3 * t - dist2.length() * size) * magnitude;
+                let xsin1 = Math.sin(params.freq * t - dist1.length() * size) * magnitude * Math.exp(-dist1.length() * params.damp);
+                let xsin2 = Math.sin(params.freq * t - dist2.length() * size) * magnitude * Math.exp(-dist1.length() * params.damp);
                 plane.geometry.attributes.position.setZ(i, xsin1 + xsin2);
             }
             plane.geometry.computeVertexNormals();
             plane.geometry.attributes.position.needsUpdate = true;
 
-            requestAnimationFrame(wave);
+            requestID = requestAnimationFrame(wave);
 
-            render();
+
         }
 
-        function wave1() {
-            let center1 = box.position;
+        // function wave1() {
+        //     let center1 = new THREE.Vector3(params.pos, 0, 0);
 
-            let vLength = plane.geometry.attributes.position.count;
-            let t = clock.getElapsedTime();
-            for (let i = 0; i < vLength; i++) {
-                const vx = plane.geometry.attributes.position.getX(i);
-                const vy = plane.geometry.attributes.position.getY(i);
-                const vz = plane.geometry.attributes.position.getZ(i);
-                let dist1 = new THREE.Vector3(vx, vy, vz).sub(center1);
+        //     let vLength = plane.geometry.attributes.position.count;
+        //     let t = clock.getElapsedTime();
+        //     for (let i = 0; i < vLength; i++) {
+        //         const vx = plane.geometry.attributes.position.getX(i);
+        //         const vy = plane.geometry.attributes.position.getY(i);
+        //         const vz = plane.geometry.attributes.position.getZ(i);
+        //         let dist1 = new THREE.Vector3(vx, vy, vz).sub(center1);
 
-                let size = 6; //5
-                let magnitude = 0.2;//4
+        //         let size = params.size; //5
+        //         let magnitude = params.mag;//4
 
-                let xsin1 = Math.sin(3 * t - dist1.length() * size) * magnitude;
+        //         let xsin1 = Math.sin(params.freq * t - dist1.length() * size) * magnitude;
 
-                plane.geometry.attributes.position.setZ(i, xsin1);
-            }
-            plane.geometry.computeVertexNormals();
-            plane.geometry.attributes.position.needsUpdate = true;
+        //         plane.geometry.attributes.position.setZ(i, vz);
+        //     }
+        //     plane.geometry.computeVertexNormals();
+        //     plane.geometry.attributes.position.needsUpdate = true;
 
-            requestAnimationFrame(wave1);
+        //     requestSingle = requestAnimationFrame(wave1);
+        //     // console.log(radTodeg((params.size) / (2 * params.pos)))
 
-            render();
-        }
+        // }
 
-        function wave2() {
-
-            let center2 = new THREE.Vector3(-8, -2.5, 0);
-            let vLength = plane.geometry.attributes.position.count;
-            let t = clock.getElapsedTime();
-            for (let i = 0; i < vLength; i++) {
-                const vx = plane.geometry.attributes.position.getX(i);
-                const vy = plane.geometry.attributes.position.getY(i);
-                const vz = plane.geometry.attributes.position.getZ(i);
-                let dist2 = new THREE.Vector3(vx, vy, vz).sub(center2);
-                let size = 6; //5
-                let magnitude = 0.2;//4
-                let xsin2 = Math.sin(3 * t - dist2.length() * size) * magnitude;
-                plane.geometry.attributes.position.setZ(i, xsin2);
-            }
-            plane.geometry.computeVertexNormals();
-            plane.geometry.attributes.position.needsUpdate = true;
-
-            requestAnimationFrame(wave2);
-
-            render();
+        function radTodeg(a) {
+            return (Math.asin(a) * (180 / Math.PI)).toFixed(1)
         }
 
         function init() {
 
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0xbfd1e5);
-            createCamera(50, 0, 0, 20, scene.position);
+            const scaleHorizontal = new THREE.GridHelper(50, 30);
+            scaleHorizontal.position.y = 0.010
+            // scene.add(scaleHorizontal);
+            createCamera(50, 0, 0, 30, scene.position);
 
             createLights();
             createRenderer();
             createControls(0, 0, 0);
 
-            let planeGeometry = new THREE.PlaneBufferGeometry(20, 10, 100, 50);
+            let planeGeometry = new THREE.PlaneBufferGeometry(30, 20, 600, 400);
             let planeMaterial = new THREE.MeshPhongMaterial({
-                color: 0xEF3523
+                color: 0xEF3523, side: THREE.DoubleSide
             });
             plane = new THREE.Mesh(planeGeometry, planeMaterial);
             plane.geometry.dynamic = true;
             // plane.rotation.x = -0.5 * Math.PI;
             scene.add(plane);
 
-            let box_geometry = new THREE.BoxGeometry(.1, .1, .1); //Default width, length, height of .1           
-            let material = new THREE.MeshLambertMaterial({ color: new THREE.Color(0.9, 0.55, 0.4) });
-            box = new THREE.Mesh(box_geometry, material);
-            box.position.y = 2.5;
-            box.position.x = -8;
-            scene.add(box);
-
             window.addEventListener('resize', onWindowResize);
-            document.addEventListener('click', function (e) {
-                cancelAnimationFrame(wave1)
-                wave();
-            });
+
         }
 
         function createCamera(view, x, y, z, vector) {
@@ -244,30 +262,20 @@
         }
 
         function createLights() {
-            scene.add(new THREE.AmbientLight(0xffffff, 0.5));
-            // DIRECTIONAL LIGHT
-            const dirLight = new THREE.DirectionalLight(0xffffff, 1.0)
-            dirLight.position.x += 20
-            dirLight.position.y += 20
-            dirLight.position.z += 20
-            dirLight.castShadow = true
-            dirLight.shadow.mapSize.width = 4096;
-            dirLight.shadow.mapSize.height = 4096;
-            const d = 10;
-            dirLight.shadow.camera.left = - d;
-            dirLight.shadow.camera.right = d;
-            dirLight.shadow.camera.top = d;
-            dirLight.shadow.camera.bottom = - d;
-            dirLight.position.z = -25;
 
-            let target = new THREE.Object3D();
-            target.position.z = -30;
-            dirLight.target = target;
-            dirLight.target.updateMatrixWorld();
 
-            dirLight.shadow.camera.lookAt(0, 0, -30);
-            scene.add(dirLight);
-            // scene.add(new THREE.CameraHelper(dirLight.shadow.camera));
+            // Create a directional light
+            const ambientLight = new THREE.HemisphereLight(0xddeeff, 0x202020, 1);
+            let mainLight = new THREE.DirectionalLight(0xffffff, 0.25);
+
+            // move the light back and up a bit
+            mainLight.position.set(1, 1, 10);
+            let l = mainLight.clone()
+            l.position.set(1, -10, 10);
+            // remember to add the light to the scene
+            scene.add(ambientLight, mainLight, l);
+
+
         }
 
         function createRenderer() {
@@ -313,6 +321,78 @@
             renderer.render(scene, camera);
         }
 
+        let points = [];
+        function addPath() {
+
+            let vertices = [params.L, 0, 0, params.L, 0, 0];
+            // let points = [];
+            const point = new THREE.Vector3();
+            const color = new THREE.Color();
+
+            const points = [];
+            points.push(new THREE.Vector3(-params.L, 0, 0));
+            points.push(new THREE.Vector3(params.L, 0, 0));
+
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            const material = new THREE.LineBasicMaterial({ color: 0xffffff });
+            const line = new THREE.Line(geometry, material);
+
+            scene.add(line)
+
+            addRef((1.6 + params.d) / (params.size))
+        }
+
+        function addRays(length) {
+            let rayGeometry = new THREE.CylinderBufferGeometry(.05, .05, length, 8, 1).translate(0, length / 2, 0);
+            rayGeometry.rotateX(Math.PI / 2);
+
+            let rayLine = new THREE.Mesh(rayGeometry, new THREE.MeshBasicMaterial({ color: 'blue' }));
+            let coneGeometry = new THREE.ConeGeometry(.3, .5, 6).translate(0, length / 2, 0);
+            coneGeometry.rotateX(Math.PI / 2);
+            let rayArrow = new THREE.Mesh(coneGeometry, new THREE.MeshBasicMaterial({ color: 'black' }));
+            rayLine.add(rayArrow)
+
+            return rayLine
+        }
+
+
+        function addRef(a) {
+
+            while (LINES.children.length > 0) {
+                const A = LINES.children[0];
+                A.parent.remove(A);
+            }
+            let Q = new THREE.Vector3(params.L, 0, 0)
+            let P = new THREE.Vector3(params.L, params.d, 0)
+            let O = new THREE.Vector3(-params.L, 0, 0)
+            let S1 = new THREE.Vector3(params.pos, params.d, 0)
+            let S2 = new THREE.Vector3(params.pos, -params.d, 0)
+
+            // let vrt = []
+
+            // vrt.push(params.L, 0, 0)
+
+            // let X = a
+            // for (let i = 0; i < params.point; i++) {
+
+            //     vrt.push(params.L)
+            //     vrt.push(X, 0)
+            //     vrt.push(params.L)
+            //     vrt.push(-X, 0)
+            //     X += 2 * a
+            // }
+            // console.log(vrt, "freq =", params.size, ", dist =", params.d)
+            // const pts = new THREE.Points(new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(vrt, 3)), new THREE.PointsMaterial({ color: 0x888888 }));
+            // LINES.add(pts);
+            // Y.lookAt(pts.position)
+            let R1 = addRays(S1.distanceTo(Q));
+            let R2 = addRays(S2.distanceTo(Q));
+            R1.position.set(params.pos, params.d, 0)
+            R2.position.set(params.pos, -params.d, 0)
+            R1.lookAt(Q)
+            R2.lookAt(Q);
+            LINES.add(R1, R2);
+        }
     </script>
 </body>
 
